@@ -1,5 +1,5 @@
 # Tower Crane Mod
-In order to simplify the construction of buildings, the crane forms a working area, in which the player fly (like the fly privs)
+In order to simplify the construction of buildings, the crane forms a working area in which the player can fly (similar to fly privs).
 
 The crane can be completely assembled by setting only the base block.
 The size of the crane (which is the working area) can be configured.

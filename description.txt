@@ -1,1 +1,1 @@
-The Tower Crane Mod forms a constrution area below the crane arm which gives the crane owner "fly privs".
+To simplify the construction of buildings, the crane forms a working area, in which the player can fly.
