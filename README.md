@@ -4,6 +4,9 @@ In order to simplify the construction of buildings, the crane forms a working ar
 The crane can be completely assembled by setting only the base block.
 The size of the crane (which is the working area) can be configured.
 
+![Tower Crane](https://github.com/joe7575/Minetest-Towercrane/blob/master/towercrane640.png)
+
+
 ## Introduction
 * Place the crane base node.
   The crane arm will later be build in the same direction you are currently looking 
