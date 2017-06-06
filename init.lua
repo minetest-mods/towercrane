@@ -11,6 +11,7 @@
 
     History:
     2017-06-04  v0.01  first version
+    2017-06-06  v0.02  Hook bugfix
 ]]--
 
 
@@ -20,12 +21,12 @@ towercrane = {}
 --##  Tower Crane Hook
 --##################################################################################################
 local hook = {
-	physical = true, 
-	collisionbox = {-0.2, -0.2, -0.2, 0.2, 0.2, 0.2},
-	collide_with_objects = false,   
-	visual = "cube",
+    physical = true, 
+    collisionbox = {-0.2, -0.2, -0.2, 0.2, 0.2, 0.2},
+    collide_with_objects = false,   
+    visual = "cube",
     visual_size = {x=0.4, y=0.4},
-	textures = {
+    textures = {
         "towercrane_hook.png",
         "towercrane_hook.png",
         "towercrane_hook.png",
@@ -35,7 +36,7 @@ local hook = {
     },
     groups = {cracky=1},
     -- local variabels
-	driver = nil,
+    driver = nil,
     speed_forward=0,
     speed_right=0,
     speed_up=0,
@@ -44,13 +45,13 @@ local hook = {
 -- Enter/leave the Hook
 ----------------------------------------------------------------------------------------------------
 function hook:on_rightclick(clicker)
-	if self.driver and clicker == self.driver then  -- leave?
-		clicker:set_detach()
-		self.driver = nil
-	elseif not self.driver then                     -- enter?
-		self.driver = clicker
+    if self.driver and clicker == self.driver then  -- leave?
+        clicker:set_detach()
+        self.driver = nil
+    elseif not self.driver then                     -- enter?
+        self.driver = clicker
         clicker:set_attach(self.object, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
-	end
+    end
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -311,8 +312,15 @@ minetest.register_node("towercrane:base", {
         local height = meta:get_int("height")
         local width = meta:get_int("width")
 
+        -- remove crane
         if dir ~= nil and height ~= nil and width ~= nil then
            dig_crane(pos, dir, height, width)
+        end
+        -- remove hook
+        local id = minetest.hash_node_position(pos)
+        if towercrane.id then
+            towercrane.id:remove()
+            towercrane.id = nil
         end
     end,
 })
@@ -321,205 +329,203 @@ minetest.register_node("towercrane:base", {
 -- Register Crane balance
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:balance", {
-  description = "Tower Crane Balance",
-  tiles = {
-      "towercrane_base.png",
-      "towercrane_base.png",
-      "towercrane_base.png",
-      "towercrane_base.png",
-      "towercrane_base.png",
-      "towercrane_base.png",
-  },
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+    description = "Tower Crane Balance",
+    tiles = {
+        "towercrane_base.png",
+        "towercrane_base.png",
+        "towercrane_base.png",
+        "towercrane_base.png",
+        "towercrane_base.png",
+        "towercrane_base.png",
+    },
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
 
 ----------------------------------------------------------------------------------------------------
 -- Register Crane mast
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:mast", {
-  description = "Tower Crane Mast",
-  drawtype = "glasslike_framed",
-  tiles = {
-      "towercrane_mast.png",
-      "towercrane_mast.png",
-      "towercrane_mast.png",
-      "towercrane_mast.png",
-      "towercrane_mast.png",
-      "towercrane_mast.png",
-  },
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+    description = "Tower Crane Mast",
+    drawtype = "glasslike_framed",
+    tiles = {
+        "towercrane_mast.png",
+        "towercrane_mast.png",
+        "towercrane_mast.png",
+        "towercrane_mast.png",
+        "towercrane_mast.png",
+        "towercrane_mast.png",
+    },
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
 
 ----------------------------------------------------------------------------------------------------
 -- Register Crane Switch (on)
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:mast_ctrl_on", {
-  description = "Tower Crane Mast Ctrl On",
-  drawtype = "node",
-  tiles = {
-      "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl_on.png",
-      "towercrane_mast_ctrl_on.png",
-      "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl.png",
-  },
-  on_rightclick = function (pos, node, clicker)
-    local meta = minetest.get_meta(pos)
-    if not clicker or not clicker:is_player() then
-        return
-    end
-    if clicker:get_player_name() ~= meta:get_string("owner") then
-        return
-    end
-    node.name = "towercrane:mast_ctrl_off"
-    minetest.swap_node(pos, node)
+    description = "Tower Crane Mast Ctrl On",
+    drawtype = "node",
+    tiles = {
+        "towercrane_mast_ctrl.png",
+        "towercrane_mast_ctrl.png",
+        "towercrane_mast_ctrl_on.png",
+        "towercrane_mast_ctrl_on.png",
+        "towercrane_mast_ctrl.png",
+        "towercrane_mast_ctrl.png",
+    },
+    on_rightclick = function (pos, node, clicker)
+        local meta = minetest.get_meta(pos)
+        if not clicker or not clicker:is_player() then
+            return
+        end
+        if clicker:get_player_name() ~= meta:get_string("owner") then
+            return
+        end
+        node.name = "towercrane:mast_ctrl_off"
+        minetest.swap_node(pos, node)
 
-    local id = minetest.hash_node_position(pos)
-    if towercrane.id then
-        towercrane.id:remove()
-        towercrane.id = nil
-    else
-    
-    end
-  end,
-  
-  on_construct = function(pos)
-    local meta = minetest.get_meta(pos)
-    meta:set_string("infotext", "Switch crane on/off")
-  end,
-  
-  after_place_node = function(pos, placer, itemstack, pointed_thing)
-    local meta = minetest.get_meta(pos)
-    local owner = placer:get_player_name()
-    meta:set_string("owner", owner)
-  end,
-  
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+        local id = minetest.hash_node_position(pos)
+        if towercrane.id then
+            towercrane.id:remove()
+            towercrane.id = nil
+        end
+    end,
+
+    on_construct = function(pos)
+        local meta = minetest.get_meta(pos)
+        meta:set_string("infotext", "Switch crane on/off")
+    end,
+
+    after_place_node = function(pos, placer, itemstack, pointed_thing)
+        local meta = minetest.get_meta(pos)
+        local owner = placer:get_player_name()
+        meta:set_string("owner", owner)
+    end,
+
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
 
 ----------------------------------------------------------------------------------------------------
 -- Register Crane Switch (off)
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:mast_ctrl_off", {
-  description = "Tower Crane Mast Ctrl Off",
-  drawtype = "node",
-  tiles = {
+    description = "Tower Crane Mast Ctrl Off",
+    drawtype = "node",
+    tiles = {
+        "towercrane_mast_ctrl.png",
+        "towercrane_mast_ctrl.png",
+        "towercrane_mast_ctrl_off.png",
+        "towercrane_mast_ctrl_off.png",
+        "towercrane_mast_ctrl.png",
       "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl_off.png",
-      "towercrane_mast_ctrl_off.png",
-      "towercrane_mast_ctrl.png",
-      "towercrane_mast_ctrl.png",
-  },
-  on_rightclick = function (pos, node, clicker)
-    -- switch switch on, calculate the construction area, and place the hook
-    local meta = minetest.get_meta(pos)
-    -- only the owner is allowed to switch
-    if not clicker or not clicker:is_player() then
-        return
-    end
-    if clicker:get_player_name() ~= meta:get_string("owner") then
-        return
-    end
-    -- swap to the other node
-    node.name = "towercrane:mast_ctrl_on"
-    minetest.swap_node(pos, node)
-    local dir = minetest.string_to_pos(meta:get_string("dir"))
-    if pos ~= nil and dir ~= nil then
-        -- store hook instance in 'towercrane'
-        local id = minetest.hash_node_position(pos)
-        towercrane.id = place_hook(table.copy(pos), dir)
-
-        -- calculate the construction area dimension (pos, pos2)
-        local height = meta:get_int("height")
-        local width = meta:get_int("width")
-
-        -- pos1 = close/right
-        dir = turnright(dir)
-        local pos1 = vector.add(pos, vector.multiply(dir, width/2))
-        dir = turnleft(dir)
-        local pos1 = vector.add(pos1, vector.multiply(dir, 1))
-        pos1.y = pos.y - 1
-
-        -- pos2 = far/left
-        local pos2 = vector.add(pos1, vector.multiply(dir, width-1))
-        dir = turnleft(dir)
-        pos2 = vector.add(pos2, vector.multiply(dir, width))
-        pos2.y = pos.y - 4 + height
-
-        -- normalize x/z so that pos2 > pos1
-        if pos2.x < pos1.x then
-            pos2.x, pos1.x = pos1.x, pos2.x
+    },
+    on_rightclick = function (pos, node, clicker)
+        -- switch switch on, calculate the construction area, and place the hook
+        local meta = minetest.get_meta(pos)
+        -- only the owner is allowed to switch
+        if not clicker or not clicker:is_player() then
+            return
         end
-        if pos2.z < pos1.z then
-            pos2.z, pos1.z = pos1.z, pos2.z
+        if clicker:get_player_name() ~= meta:get_string("owner") then
+            return
         end
+        -- swap to the other node
+        node.name = "towercrane:mast_ctrl_on"
+        minetest.swap_node(pos, node)
+        local dir = minetest.string_to_pos(meta:get_string("dir"))
+        if pos ~= nil and dir ~= nil then
+            -- store hook instance in 'towercrane'
+            local id = minetest.hash_node_position(pos)
+            towercrane.id = place_hook(table.copy(pos), dir)
 
-        -- store pos1/pos2 in the hook (LuaEntitySAO)
-        towercrane.id:get_luaentity().pos1 = pos1
-        towercrane.id:get_luaentity().pos2 = pos2
-    end
-  end,
+            -- calculate the construction area dimension (pos, pos2)
+            local height = meta:get_int("height")
+            local width = meta:get_int("width")
 
-  on_construct = function(pos)
-    -- add infotext
-    local meta = minetest.get_meta(pos)
-    meta:set_string("infotext", "Switch crane on/off")
-  end,
+            -- pos1 = close/right
+            dir = turnright(dir)
+            local pos1 = vector.add(pos, vector.multiply(dir, width/2))
+            dir = turnleft(dir)
+            local pos1 = vector.add(pos1, vector.multiply(dir, 1))
+            pos1.y = pos.y - 1
 
-  after_place_node = function(pos, placer, itemstack, pointed_thing)
-    -- store owner for dig protection
-    local meta = minetest.get_meta(pos)
-    local owner = placer:get_player_name()
-    meta:set_string("owner", owner)
-  end,
-  
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+            -- pos2 = far/left
+            local pos2 = vector.add(pos1, vector.multiply(dir, width-1))
+            dir = turnleft(dir)
+            pos2 = vector.add(pos2, vector.multiply(dir, width))
+            pos2.y = pos.y - 4 + height
+
+            -- normalize x/z so that pos2 > pos1
+            if pos2.x < pos1.x then
+                pos2.x, pos1.x = pos1.x, pos2.x
+            end
+            if pos2.z < pos1.z then
+                pos2.z, pos1.z = pos1.z, pos2.z
+            end
+
+            -- store pos1/pos2 in the hook (LuaEntitySAO)
+            towercrane.id:get_luaentity().pos1 = pos1
+            towercrane.id:get_luaentity().pos2 = pos2
+        end
+    end,
+
+    on_construct = function(pos)
+        -- add infotext
+        local meta = minetest.get_meta(pos)
+        meta:set_string("infotext", "Switch crane on/off")
+    end,
+
+    after_place_node = function(pos, placer, itemstack, pointed_thing)
+        -- store owner for dig protection
+        local meta = minetest.get_meta(pos)
+        local owner = placer:get_player_name()
+        meta:set_string("owner", owner)
+    end,
+
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
 
 ----------------------------------------------------------------------------------------------------
 -- Register Crane arm 1
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:arm", {
-  description = "Tower Crane Arm",
-  drawtype = "glasslike_framed",
-  tiles = {
-      "towercrane_arm.png",
-      "towercrane_arm.png",
-      "towercrane_arm.png",
-      "towercrane_arm.png",
-      "towercrane_arm.png",
-      "towercrane_arm.png",
-  },
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+    description = "Tower Crane Arm",
+    drawtype = "glasslike_framed",
+    tiles = {
+        "towercrane_arm.png",
+        "towercrane_arm.png",
+        "towercrane_arm.png",
+        "towercrane_arm.png",
+        "towercrane_arm.png",
+        "towercrane_arm.png",
+    },
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
 
 ----------------------------------------------------------------------------------------------------
 -- Register Crane arm 2
 ----------------------------------------------------------------------------------------------------
 minetest.register_node("towercrane:arm2", {
-  description = "Tower Crane Arm2",
-  drawtype = "glasslike_framed",
-  tiles = {
-      "towercrane_arm2.png",
-      "towercrane_arm2.png",
-      "towercrane_arm2.png",
-      "towercrane_arm2.png",
-      "towercrane_arm2.png",
-      "towercrane_arm2.png",
-  },
-  paramtype2 = "facedir",
-  is_ground_content = false,
-  groups = {crumbly=0, not_in_creative_inventory=1},
+    description = "Tower Crane Arm2",
+    drawtype = "glasslike_framed",
+    tiles = {
+        "towercrane_arm2.png",
+        "towercrane_arm2.png",
+        "towercrane_arm2.png",
+        "towercrane_arm2.png",
+        "towercrane_arm2.png",
+        "towercrane_arm2.png",
+    },
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    groups = {crumbly=0, not_in_creative_inventory=1},
 })
