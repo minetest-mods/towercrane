@@ -529,3 +529,19 @@ minetest.register_node("towercrane:arm2", {
     is_ground_content = false,
     groups = {crumbly=0, not_in_creative_inventory=1},
 })
+
+
+----------------------------------------------------------------------------------------------------
+-- Register Recipe
+----------------------------------------------------------------------------------------------------
+minetest.register_craft({
+	output = "towercrane:base",
+	recipe = {
+		{"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
+		{"default:steel_ingot", "", ""},
+		{"default:steel_ingot", "dye:yellow", ""}
+	}
+})
+
+
+
