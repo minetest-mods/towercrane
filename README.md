@@ -8,13 +8,13 @@ The size of the crane (which is the working area) can be configured.
 
 
 ## Introduction
-* Place the crane base node.
+* Place the crane base block.
   The crane arm will later be build in the same direction you are currently looking 
 
-* Right-click the crane base node and set the crane dimensions in height and width (between 8 and 24 by default).
+* Right-click the crane base block and set the crane dimensions in height and width (between 8 and 24 by default).
   The crane will be build according to this settings.
 
-* Right-click the crane switch node to place the hook in front of the crane mast
+* Right-click the crane switch block to place the hook in front of the crane mast
 
 * Enter the hook by right-clicking the hook
 
@@ -26,7 +26,7 @@ The size of the crane (which is the working area) can be configured.
 
 * Leave the hook by right-clicking the hook or right-clicking the crane switch node
 
-* To destroy the crane, destroy the base node.
+* To destroy the crane, destroy the base block.
 
 
 ## To Do:
