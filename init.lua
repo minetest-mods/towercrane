@@ -164,11 +164,6 @@ local function turnleft(dir)
     return minetest.facedir_to_dir((facedir + 3) % 4)
 end
 
-
-    if minetest.get_node_or_nil(pos) ~= nil then
-        return false
-    end
-
 ----------------------------------------------------------------------------------------------------
 -- Check space for mast and arm
 ----------------------------------------------------------------------------------------------------
