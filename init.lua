@@ -3,7 +3,7 @@
     Tower Crane Mod
     ===============
 
-    v0.01 by JoSt
+    v0.03 by JoSt
     
     Copyright (C) 2017 Joachim Stolberg
     LGPLv2.1+
@@ -12,6 +12,8 @@
     History:
     2017-06-04  v0.01  first version
     2017-06-06  v0.02  Hook bugfix
+    2017-06-07  v0.03  fixed 2 bugs, added config.lua and sound
+    
 ]]--
 
 
