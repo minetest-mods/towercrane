@@ -17,6 +17,8 @@
 
 towercrane = {}
 
+dofile(minetest.get_modpath("towercrane") .. "/config.lua")
+
 --##################################################################################################
 --##  Tower Crane Hook
 --##################################################################################################
@@ -25,7 +27,7 @@ local hook = {
     collisionbox = {-0.2, -0.2, -0.2, 0.2, 0.2, 0.2},
     collide_with_objects = false,   
     visual = "cube",
-    visual_size = {x=0.4, y=0.4},
+    visual_size = {x=0.6, y=0.6},
     textures = {
         "towercrane_hook.png",
         "towercrane_hook.png",
@@ -40,17 +42,27 @@ local hook = {
     speed_forward=0,
     speed_right=0,
     speed_up=0,
+    sound=nil,
 }
 ----------------------------------------------------------------------------------------------------
 -- Enter/leave the Hook
 ----------------------------------------------------------------------------------------------------
 function hook:on_rightclick(clicker)
+    local name = clicker:get_player_name()
     if self.driver and clicker == self.driver then  -- leave?
         clicker:set_detach()
+        default.player_attached[name] = false
+        default.player_set_animation(clicker, "stand" , 10)
         self.driver = nil
+        if self.sound ~= nil then
+            minetest.sound_stop(self.sound)
+            self.sound = nil
+        end
     elseif not self.driver then                     -- enter?
         self.driver = clicker
-        clicker:set_attach(self.object, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+        clicker:set_attach(self.object, "", {x=0,y=15,z=-3}, {x=0,y=0,z=0})
+        default.player_attached[name] = true
+        default.player_set_animation(clicker, "sit" , 10)
     end
 end
 
@@ -112,6 +124,17 @@ function hook:on_step(dtime)
         if pos.z < self.pos1.z then vz=  velocity end
         if pos.z > self.pos2.z then vz= -velocity end
 
+        if vx ~= 0 or vz ~= 0 or self.speed_up ~= 0 then
+            if self.sound == nil then
+                self.sound = minetest.sound_play({name="crane"},{object=self.object,
+                                                 gain=towercrane.gain, max_hear_distance=20,
+                                                 loop=true})
+            end
+        elseif self.sound ~= nil then
+            minetest.sound_stop(self.sound)
+            self.sound = nil
+        end
+        
         self.object:setvelocity({x=vx, y=self.speed_up,z=vz})
     else
         self.object:setvelocity({x=0, y=0,z=0})
@@ -137,6 +160,34 @@ end
 local function turnleft(dir)
     local facedir = minetest.dir_to_facedir(dir)
     return minetest.facedir_to_dir((facedir + 3) % 4)
+end
+
+
+    if minetest.get_node_or_nil(pos) ~= nil then
+        return false
+    end
+
+----------------------------------------------------------------------------------------------------
+-- Check space for mast and arm
+----------------------------------------------------------------------------------------------------
+local function check_space(pos, dir, height, width)
+    for i = 1,height+2 do
+        pos.y = pos.y + 1
+        if minetest.get_node_or_nil(pos).name ~= "air" then
+            return false
+        end
+    end
+    
+    pos.x = pos.x + dir.x*2
+    pos.z = pos.z + dir.z*2
+    for i = 1,width+3 do
+        pos.x = pos.x + dir.x
+        pos.z = pos.z + dir.z
+        if minetest.get_node_or_nil(pos).name ~= "air" then
+            return false
+        end
+    end
+    return true
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -177,7 +228,6 @@ local function construct_crane(pos, dir, height, width, owner)
         else
             minetest.env:add_node(pos, {name="towercrane:arm"})
         end
-        
     end
 end
 
@@ -243,7 +293,7 @@ minetest.register_node("towercrane:base", {
     },
     paramtype2 = "facedir",
     is_ground_content = false,
-    groups = {cracky=3},
+    groups = {cracky=2},
     formspec = set_formspec,
 
     -- set meta data (form for crane height and width, dir of the arm)
@@ -281,7 +331,6 @@ minetest.register_node("towercrane:base", {
         local dir = minetest.string_to_pos(meta:get_string("dir"))
         local height = meta:get_int("height")
         local width = meta:get_int("width")
-        local org_pos = table.copy(pos)
         if dir ~= nil and height ~= nil and width ~= nil then
            dig_crane(pos, dir, height, width)
         end
@@ -292,14 +341,18 @@ minetest.register_node("towercrane:base", {
             local width = tonumber(size[2])
             if height ~= nil and width ~= nil then
                 height = math.max(height, 8)
-                height = math.min(height, 24)
+                height = math.min(height, towercrane.max_height)
                 width = math.max(width, 8)
-                width = math.min(width, 24)
+                width = math.min(width, towercrane.max_width)
                 meta:set_int("height", height)
                 meta:set_int("width", width)
                 meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
                 if dir ~= nil then
-                    construct_crane(org_pos, dir, height, width, owner)
+                    if check_space(table.copy(pos), dir, height, width) then
+                        construct_crane(table.copy(pos), dir, height, width, owner)
+                    else
+                        minetest.chat_send_player(owner, "Too less space to raise up the tower crane!")
+                    end
                 end
             end
         end
@@ -447,18 +500,18 @@ minetest.register_node("towercrane:mast_ctrl_off", {
             local height = meta:get_int("height")
             local width = meta:get_int("width")
 
-            -- pos1 = close/right
+            -- pos1 = close/right/below
             dir = turnright(dir)
             local pos1 = vector.add(pos, vector.multiply(dir, width/2))
             dir = turnleft(dir)
             local pos1 = vector.add(pos1, vector.multiply(dir, 1))
-            pos1.y = pos.y - 1
+            pos1.y = pos.y - 2 - height
 
-            -- pos2 = far/left
+            -- pos2 = far/left/above
             local pos2 = vector.add(pos1, vector.multiply(dir, width-1))
             dir = turnleft(dir)
             pos2 = vector.add(pos2, vector.multiply(dir, width))
-            pos2.y = pos.y - 4 + height
+            pos2.y = pos.y - 3 + height
 
             -- normalize x/z so that pos2 > pos1
             if pos2.x < pos1.x then
