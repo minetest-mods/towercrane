@@ -30,7 +30,6 @@ The size of the crane (which is the working area) can be configured.
 
 
 ## To Do:
-- crafting recipe
 - automatically give the crane owner area protection  (based on the areas mod)
 - output the crane hook position somehow(?) relative to a predefined reference position
 
