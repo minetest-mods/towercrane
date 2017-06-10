@@ -7,7 +7,7 @@ Download: ![GitHub](https://github.com/joe7575/Minetest-Towercrane/archive/maste
 
 The crane can be completely assembled by setting only the base block.
 The size of the crane (which is the construction area) can be configured.
-The owner of the crane get automatically area protection over the complete construction area (therefore the area Mod is required).
+The owner of the crane gets automatically area protection over the complete construction area (therefore the area Mod is required).
 
 ![Tower Crane](https://github.com/joe7575/Minetest-Towercrane/blob/master/towercrane640.png)
 
