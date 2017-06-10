@@ -34,7 +34,7 @@ The owner of the crane get automatically area protection over the complete const
 * Leave the hook by right-clicking the hook or right-clicking the crane switch node
 
 * To remove the crane, destroy the base block.  
-  **Hint:** The construction area of the crane will also be removed.  
+  **Hint:** The protection area of the crane will also be removed.  
   In order to protect your building again, you have to use the normal chat commands.
 
 
