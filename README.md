@@ -33,20 +33,20 @@ The owner of the crane get automatically area protection over the complete const
 
 * Leave the hook by right-clicking the hook or right-clicking the crane switch node
 
-* To remove the crane, destroy the base block.
-  **Hint:** The construction area of the crane will also be removed. In order to protect your building again, 
-  you have to use the normal chat commands.
+* To remove the crane, destroy the base block.  
+  **Hint:** The construction area of the crane will also be removed.  
+  In order to protect your building again, you have to use the normal chat commands.
 
 
 ## To Do:
 - output the crane hook coordinates in the HUD relative to a predefined reference position
 
 ## Dependencies
-- default
-- areas (optional)
+default  
+areas (optional)
 
 # License
-Copyright (C) 2017 Joachim Stolberg
-Code: Licensed under the GNU LGPL version 2.1 or later. See LICENSE.txt and http://www.gnu.org/licenses/lgpl-2.1.txt
+Copyright (C) 2017 Joachim Stolberg  
+Code: Licensed under the GNU LGPL version 2.1 or later. See LICENSE.txt and http://www.gnu.org/licenses/lgpl-2.1.txt  
 Textures: CC0
 
