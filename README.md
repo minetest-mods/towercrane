@@ -2,6 +2,7 @@
 In order to simplify the construction of buildings, the crane forms a construction area in which the player can fly (similar to fly privs).
 
 Browse on: ![GitHub](https://github.com/joe7575/Minetest-Towercrane)
+
 Download: ![GitHub](https://github.com/joe7575/Minetest-Towercrane/archive/master.zip)
 
 The crane can be completely assembled by setting only the base block.
@@ -40,7 +41,7 @@ The owner of the crane get automatically area protection over the complete const
 ## To Do:
 - output the crane hook coordinates in the HUD relative to a predefined reference position
 
-# Dependencies
+## Dependencies
 - default
 - areas (optional)
 
