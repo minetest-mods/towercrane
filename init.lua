@@ -3,8 +3,8 @@
 	Tower Crane Mod
 	===============
 
-	v0.04 by JoSt
-	
+	v0.05 by JoSt
+
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
 	See LICENSE.txt for more information
@@ -14,7 +14,8 @@
 	2017-06-06  v0.02  Hook bugfix
 	2017-06-07  v0.03  fixed 2 bugs, added config.lua and sound
 	2017-06-08  v0.04  recipe and rope length now configurable
-	
+	2017-06-10  v0.05  resizing bugfix, area protection added
+
 ]]--
 
 
@@ -26,9 +27,9 @@ dofile(minetest.get_modpath("towercrane") .. "/config.lua")
 --##  Tower Crane Hook
 --##################################################################################################
 local hook = {
-	physical = true, 
+	physical = true,
 	collisionbox = {-0.2, -0.2, -0.2, 0.2, 0.2, 0.2},
-	collide_with_objects = false,   
+	collide_with_objects = false,
 	visual = "cube",
 	visual_size = {x=0.6, y=0.6},
 	textures = {
@@ -47,6 +48,7 @@ local hook = {
 	speed_up=0,
 	sound=nil,
 }
+
 ----------------------------------------------------------------------------------------------------
 -- Enter/leave the Hook
 ----------------------------------------------------------------------------------------------------
@@ -94,7 +96,7 @@ function hook:on_step(dtime)
 		elseif self.speed_forward < 0 then
 			self.speed_forward = self.speed_forward + velocity
 		end
-		
+
 		if ctrl.right then          -- right
 			self.speed_right = math.min(self.speed_right + velocity, max_speed)
 		elseif ctrl.left then       -- left
@@ -127,6 +129,7 @@ function hook:on_step(dtime)
 		if pos.z < self.pos1.z then vz=  velocity end
 		if pos.z > self.pos2.z then vz= -velocity end
 
+		-- sound control
 		if vx ~= 0 or vz ~= 0 or self.speed_up ~= 0 then
 			if self.sound == nil then
 				self.sound = minetest.sound_play({name="crane"},{object=self.object,
@@ -137,7 +140,7 @@ function hook:on_step(dtime)
 			minetest.sound_stop(self.sound)
 			self.sound = nil
 		end
-		
+
 		self.object:setvelocity({x=vx, y=self.speed_up,z=vz})
 	else
 		self.object:setvelocity({x=0, y=0,z=0})
@@ -175,7 +178,7 @@ local function check_space(pos, dir, height, width)
 			return false
 		end
 	end
-	
+
 	pos.x = pos.x + dir.x*2
 	pos.z = pos.z + dir.z*2
 	for i = 1,width+3 do
@@ -204,7 +207,7 @@ local function construct_crane(pos, dir, height, width, owner)
 		pos.y = pos.y + 1
 		minetest.env:add_node(pos, {name="towercrane:mast"})
 	end
-	
+
 	pos.y = pos.y - 2
 	pos.x = pos.x - dir.x
 	pos.z = pos.z - dir.z
@@ -217,7 +220,7 @@ local function construct_crane(pos, dir, height, width, owner)
 	minetest.env:add_node(pos, {name="towercrane:balance"})
 	pos.x = pos.x + 3 * dir.x
 	pos.z = pos.z + 3 * dir.z
-	
+
 	for i = 1,width do
 		pos.x = pos.x + dir.x
 		pos.z = pos.z + dir.z
@@ -232,10 +235,10 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Remove the crane
 ----------------------------------------------------------------------------------------------------
-local function dig_crane(pos, dir, height, width)
+local function remove_crane(pos, dir, height, width)
 	pos.y = pos.y + 1
 	minetest.env:remove_node(pos, {name="towercrane:mast_ctrl_off"})
-	
+
 	for i = 1,height+1 do
 		pos.y = pos.y + 1
 		minetest.env:remove_node(pos, {name="towercrane:mast"})
@@ -253,7 +256,7 @@ local function dig_crane(pos, dir, height, width)
 	minetest.env:remove_node(pos, {name="towercrane:balance"})
 	pos.x = pos.x + 3 * dir.x
 	pos.z = pos.z + 3 * dir.z
-	
+
 	for i = 1,width do
 		pos.x = pos.x + dir.x
 		pos.z = pos.z + dir.z
@@ -273,6 +276,81 @@ local function place_hook(pos, dir)
 	pos.x = pos.x + dir.x
 	pos.z = pos.z + dir.z
 	return minetest.add_entity(pos, "towercrane:hook")
+end
+
+
+----------------------------------------------------------------------------------------------------
+-- Check if the given construction area is not already protected
+----------------------------------------------------------------------------------------------------
+local function check_area(pos1, pos2, owner)
+	if not areas then return true end
+	for id, a in ipairs(areas:getAreasIntersectingArea(pos1, pos2)) do
+		print(dump(a.owner))
+		if a.owner ~= owner then
+			return false
+		end
+	end
+	return true
+end
+
+----------------------------------------------------------------------------------------------------
+-- Calculate and set the protection area (pos1, pos2)
+----------------------------------------------------------------------------------------------------
+local function protect_area(pos, dir, height, width, owner)
+	if not areas then return 0 end
+	-- pos1 = close/right/below
+	dir = turnright(dir)
+	dir = turnright(dir)
+	local pos1 = vector.add(pos, vector.multiply(dir, 2))
+	dir = turnleft(dir)
+	pos1 = vector.add(pos1, vector.multiply(dir, width/2))
+	dir = turnleft(dir)
+	pos1.y = pos.y - 2
+
+	-- pos2 = far/left/above
+	local pos2 = vector.add(pos1, vector.multiply(dir, width+2))
+	dir = turnleft(dir)
+	pos2 = vector.add(pos2, vector.multiply(dir, width))
+	pos2.y = pos.y + 2 + height
+
+	-- add area
+	local canAdd, errMsg = areas:canPlayerAddArea(pos1, pos2, owner)
+	if canAdd then
+		local id = areas:add(owner, owner .. "'s construction site", pos1, pos2, nil)
+		areas:save()
+		return id
+	end
+	return nil
+end
+
+----------------------------------------------------------------------------------------------------
+-- Remove the protection area
+----------------------------------------------------------------------------------------------------
+local function remove_area(id, owner)
+	if not areas then return end
+	if areas:isAreaOwner(id, owner) then
+		areas:remove(id)
+		areas:save()
+	end
+end
+
+----------------------------------------------------------------------------------------------------
+-- Check user input (height, width)
+----------------------------------------------------------------------------------------------------
+local function check_input(fields)
+	local size = string.split(fields.size, ",")
+	if #size == 2  then
+		local height = tonumber(size[1])
+		local width = tonumber(size[2])
+		if height ~= nil and width ~= nil then
+			height = math.max(height, 8)
+			height = math.min(height, towercrane.max_height)
+			width = math.max(width, 8)
+			width = math.min(width, towercrane.max_width)
+			return height, width
+		end
+	end
+	return 0, 0
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -317,40 +395,42 @@ minetest.register_node("towercrane:base", {
 			return
 		end
 		local meta = minetest.get_meta(pos)
+		local owner = meta:get_string("owner")
+		local dir = minetest.string_to_pos(meta:get_string("dir"))
+		local height = meta:get_int("height")
+		local width = meta:get_int("width")
+		local id = meta:get_int("id")
 
 		if not player or not player:is_player() then
 			return
 		end
-		local owner = meta:get_string("owner")
 		if player:get_player_name() ~= owner then
 			return
 		end
-		
-		local dir = minetest.string_to_pos(meta:get_string("dir"))
-		local height = meta:get_int("height")
-		local width = meta:get_int("width")
+		-- destroy area and crane
 		if dir ~= nil and height ~= nil and width ~= nil then
-		   dig_crane(pos, dir, height, width)
+			remove_area(id, owner)
+			remove_crane(table.copy(pos), dir, height, width)
 		end
-		--check for correct size format
-		size = string.split(fields.size, ",")
-		if #size == 2  then
-			local height = tonumber(size[1])
-			local width = tonumber(size[2])
-			if height ~= nil and width ~= nil then
-				height = math.max(height, 8)
-				height = math.min(height, towercrane.max_height)
-				width = math.max(width, 8)
-				width = math.min(width, towercrane.max_width)
-				meta:set_int("height", height)
-				meta:set_int("width", width)
-				meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
-				if dir ~= nil then
-					if check_space(table.copy(pos), dir, height, width) then
-						construct_crane(table.copy(pos), dir, height, width, owner)
+
+		-- evaluate user input
+		height, width = check_input(fields)
+		if height ~= 0 then
+			meta:set_int("height", height)
+			meta:set_int("width", width)
+			meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
+			if dir ~= nil then
+				if check_space(table.copy(pos), dir, height, width) then
+					-- add protection area
+					local id = protect_area(table.copy(pos), table.copy(dir), height, width, owner)
+					if id ~= nil then
+						meta:set_int("id", id)
+						construct_crane(table.copy(pos), table.copy(dir), height, width, owner)
 					else
-						minetest.chat_send_player(owner, "Too less space to raise up the tower crane!")
+						minetest.chat_send_player(owner, "Construction area is already protected!")
 					end
+				else
+					minetest.chat_send_player(owner, "Too less space to raise up the tower crane!")
 				end
 			end
 		end
@@ -362,13 +442,19 @@ minetest.register_node("towercrane:base", {
 		local dir = minetest.string_to_pos(meta:get_string("dir"))
 		local height = meta:get_int("height")
 		local width = meta:get_int("width")
+		local id = meta:get_int("id")
+		local owner = meta:get_string("owner")
 
+		-- remove protection area
+		if id ~= nil then
+			remove_area(id, owner)
+		end
 		-- remove crane
 		if dir ~= nil and height ~= nil and width ~= nil then
-		   dig_crane(pos, dir, height, width)
+		   remove_crane(pos, dir, height, width)
 		end
 		-- remove hook
-		local id = minetest.hash_node_position(pos)
+		id = minetest.hash_node_position(pos)
 		if towercrane.id then
 			towercrane.id:remove()
 			towercrane.id = nil
@@ -427,6 +513,7 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		"towercrane_mast_ctrl.png",
 		"towercrane_mast_ctrl.png",
 	},
+	-- switch the crane OFF
 	on_rightclick = function (pos, node, clicker)
 		local meta = minetest.get_meta(pos)
 		if not clicker or not clicker:is_player() then
@@ -475,8 +562,9 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 		"towercrane_mast_ctrl.png",
 	  "towercrane_mast_ctrl.png",
 	},
+	-- switch the crane ON
 	on_rightclick = function (pos, node, clicker)
-		-- switch switch on, calculate the construction area, and place the hook
+		-- calculate the construction area, and place the hook
 		local meta = minetest.get_meta(pos)
 		-- only the owner is allowed to switch
 		if not clicker or not clicker:is_player() then
@@ -494,7 +582,9 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			local id = minetest.hash_node_position(pos)
 			towercrane.id = place_hook(table.copy(pos), dir)
 
-			-- calculate the construction area dimension (pos, pos2)
+			--
+			-- calculate the construction area dimension (pos1, pos2)
+			--
 			local height = meta:get_int("height")
 			local width = meta:get_int("width")
 
