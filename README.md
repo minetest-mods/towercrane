@@ -1,8 +1,9 @@
 # Tower Crane Mod
-In order to simplify the construction of buildings, the crane forms a working area in which the player can fly (similar to fly privs).
+In order to simplify the construction of buildings, the crane forms a construction area in which the player can fly (similar to fly privs).
 
 The crane can be completely assembled by setting only the base block.
-The size of the crane (which is the working area) can be configured.
+The size of the crane (which is the construction area) can be configured.
+The owner of the crane get automatically area protection over the complete construction area (therefore the area Mod is required).
 
 ![Tower Crane](https://github.com/joe7575/Minetest-Towercrane/blob/master/towercrane640.png)
 
@@ -13,6 +14,8 @@ The size of the crane (which is the working area) can be configured.
 
 * Right-click the crane base block and set the crane dimensions in height and width (between 8 and 24 by default).
   The crane will be build according to this settings.
+  If there is not enough free space for the crane mast/arm or the potential construction area of the 
+  crane intersects a protected area from another player, the crane will not be build.
 
 * Right-click the crane switch block to place the hook in front of the crane mast
 
@@ -26,12 +29,13 @@ The size of the crane (which is the working area) can be configured.
 
 * Leave the hook by right-clicking the hook or right-clicking the crane switch node
 
-* To destroy the crane, destroy the base block.
+* To remove the crane, destroy the base block.
+  *Hint:* The construction area of the crane will also be removed. In order to protect your building again, 
+  you have to use the normal chat commands.
 
 
 ## To Do:
-- automatically give the crane owner area protection  (based on the areas mod)
-- output the crane hook position somehow(?) relative to a predefined reference position
+- output the crane hook coordinates in the HUD relative to a predefined reference position
 
 
 # License
