@@ -132,7 +132,7 @@ function hook:on_step(dtime)
 		-- sound control
 		if vx ~= 0 or vz ~= 0 or self.speed_up ~= 0 then
 			if self.sound == nil then
-				self.sound = minetest.sound_play({name="crane"},{object=self.object,
+				self.sound = minetest.sound_play({name="crane"},{object=self.object, pos=pos,
 												 gain=towercrane.gain, max_hear_distance=20,
 												 loop=true})
 			end
