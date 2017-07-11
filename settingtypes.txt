@@ -1,0 +1,15 @@
+# Maximum crane height in blocks (12..n)
+towercrane_max_height (maximum crane height) int 24
+
+# Maximum crane width in blocks (12..n)
+towercrane_max_width (maximum crane width) int 24
+
+# Crane rope lenght in block (max_height .. max_height+x)
+towercrane_rope_length (crane rope lenght) int 24
+
+# Gain factor for the crane sound (0.0 to 1)
+towercrane_gain (sound gain factor) float 1
+
+# Recipe available (true/false)
+towercrane_recipe (recipe available) bool true
+
