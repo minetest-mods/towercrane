@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.05 by JoSt
+	v0.06 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -15,6 +15,7 @@
 	2017-06-07  v0.03  fixed 2 bugs, added config.lua and sound
 	2017-06-08  v0.04  recipe and rope length now configurable
 	2017-06-10  v0.05  resizing bugfix, area protection added
+	2017-07-11  v0.06  fixed the space check bug, settingtypes added
 
 ]]--
 
@@ -169,103 +170,86 @@ local function turnleft(dir)
 end
 
 ----------------------------------------------------------------------------------------------------
+-- generic function for contruction and removement
+----------------------------------------------------------------------------------------------------
+local function crane_body_plan(pos, dir, height, width, clbk, tArg)
+	pos.y = pos.y + 1
+	clbk(pos, "towercrane:mast_ctrl_off", tArg)
+
+	for i = 1,height+1 do
+		pos.y = pos.y + 1
+		clbk(pos, "towercrane:mast", tArg)
+	end
+
+	pos.y = pos.y - 2
+	pos.x = pos.x - dir.x
+	pos.z = pos.z - dir.z
+	clbk(pos, "towercrane:arm2", tArg)
+	pos.x = pos.x - dir.x
+	pos.z = pos.z - dir.z
+	clbk(pos, "towercrane:arm", tArg)
+	pos.x = pos.x - dir.x
+	pos.z = pos.z - dir.z
+	clbk(pos, "towercrane:balance", tArg)
+	pos.x = pos.x + 3 * dir.x
+	pos.z = pos.z + 3 * dir.z
+
+	for i = 1,width do
+		pos.x = pos.x + dir.x
+		pos.z = pos.z + dir.z
+		if i % 2 == 0 then
+			clbk(pos, "towercrane:arm2", tArg)
+		else
+			clbk(pos, "towercrane:arm", tArg)
+		end
+	end
+end
+
+----------------------------------------------------------------------------------------------------
 -- Check space for mast and arm
 ----------------------------------------------------------------------------------------------------
 local function check_space(pos, dir, height, width)
-	for i = 1,height+2 do
-		pos.y = pos.y + 1
+	local remove = function(pos, node_name, tArg)
 		if minetest.get_node_or_nil(pos).name ~= "air" then
-			return false
+			tArg.res = false
 		end
 	end
-
-	pos.x = pos.x + dir.x*2
-	pos.z = pos.z + dir.z*2
-	for i = 1,width+3 do
-		pos.x = pos.x + dir.x
-		pos.z = pos.z + dir.z
-		if minetest.get_node_or_nil(pos).name ~= "air" then
-			return false
-		end
-	end
-	return true
+		
+	local tArg = {res = true}
+	crane_body_plan(pos, dir, height, width, remove, tArg)
+	return tArg.res
 end
 
 ----------------------------------------------------------------------------------------------------
 -- Constuct mast and arm
 ----------------------------------------------------------------------------------------------------
 local function construct_crane(pos, dir, height, width, owner)
+	local add = function(pos, node_name, tArg)
+		minetest.add_node(pos, {name=node_name, param2=minetest.dir_to_facedir(tArg.dir)})
+	end
+	
+	local tArg = {dir = dir}
+	crane_body_plan(table.copy(pos), dir, height, width, add, tArg)
+	
 	pos.y = pos.y + 1
-	minetest.env:add_node(pos, {name="towercrane:mast_ctrl_off", param2=minetest.dir_to_facedir(dir)})
 	local meta = minetest.get_meta(pos)
 	meta:set_string("dir", minetest.pos_to_string(dir))
 	meta:set_string("owner", owner)
 	meta:set_int("height", height)
 	meta:set_int("width", width)
-
-	for i = 1,height+1 do
-		pos.y = pos.y + 1
-		minetest.env:add_node(pos, {name="towercrane:mast"})
-	end
-
-	pos.y = pos.y - 2
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:add_node(pos, {name="towercrane:arm2"})
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:add_node(pos, {name="towercrane:arm"})
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:add_node(pos, {name="towercrane:balance"})
-	pos.x = pos.x + 3 * dir.x
-	pos.z = pos.z + 3 * dir.z
-
-	for i = 1,width do
-		pos.x = pos.x + dir.x
-		pos.z = pos.z + dir.z
-		if i % 2 == 0 then
-			minetest.env:add_node(pos, {name="towercrane:arm2"})
-		else
-			minetest.env:add_node(pos, {name="towercrane:arm"})
-		end
-	end
 end
 
 ----------------------------------------------------------------------------------------------------
 -- Remove the crane
 ----------------------------------------------------------------------------------------------------
 local function remove_crane(pos, dir, height, width)
-	pos.y = pos.y + 1
-	minetest.env:remove_node(pos, {name="towercrane:mast_ctrl_off"})
-
-	for i = 1,height+1 do
-		pos.y = pos.y + 1
-		minetest.env:remove_node(pos, {name="towercrane:mast"})
-	end
-
-	pos.y = pos.y - 2
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:remove_node(pos, {name="towercrane:arm2"})
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:remove_node(pos, {name="towercrane:arm"})
-	pos.x = pos.x - dir.x
-	pos.z = pos.z - dir.z
-	minetest.env:remove_node(pos, {name="towercrane:balance"})
-	pos.x = pos.x + 3 * dir.x
-	pos.z = pos.z + 3 * dir.z
-
-	for i = 1,width do
-		pos.x = pos.x + dir.x
-		pos.z = pos.z + dir.z
-		if i % 2 == 0 then
-			minetest.env:remove_node(pos, {name="towercrane:arm2"})
-		else
-			minetest.env:remove_node(pos, {name="towercrane:arm"})
+	local remove = function(pos, node_name, tArg)
+		if minetest.get_node_or_nil(pos).name == node_name then
+			minetest.remove_node(pos)
 		end
 	end
+	
+	crane_body_plan(pos, dir, height, width, remove, {})
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -343,9 +327,11 @@ local function check_input(fields)
 		local height = tonumber(size[1])
 		local width = tonumber(size[2])
 		if height ~= nil and width ~= nil then
-			height = math.max(height, 8)
+			--height = math.max(height, 8)
+			height = math.max(height, 2)
 			height = math.min(height, towercrane.max_height)
-			width = math.max(width, 8)
+			--width = math.max(width, 8)
+			width = math.max(width, 2)
 			width = math.min(width, towercrane.max_width)
 			return height, width
 		end
@@ -370,7 +356,6 @@ minetest.register_node("towercrane:base", {
 	paramtype2 = "facedir",
 	is_ground_content = false,
 	groups = {cracky=2},
-	formspec = set_formspec,
 
 	-- set meta data (form for crane height and width, dir of the arm)
 	after_place_node = function(pos, placer)
