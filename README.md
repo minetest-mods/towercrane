@@ -1,4 +1,4 @@
-# Tower Crane Mod V0.05
+# Tower Crane Mod V0.06
 In order to simplify the construction of buildings, the crane forms a construction area in which the player can fly (similar to fly privs).
 
 Browse on: ![GitHub](https://github.com/joe7575/Minetest-Towercrane)
@@ -6,7 +6,7 @@ Browse on: ![GitHub](https://github.com/joe7575/Minetest-Towercrane)
 Download: ![GitHub](https://github.com/joe7575/Minetest-Towercrane/archive/master.zip)
 
 The crane can be completely assembled by setting only the base block.
-The size of the crane (which is the construction area) can be configured.
+The size of the crane (which is the construction area) and the rope length can be configured.
 The owner of the crane gets automatically area protection over the complete construction area (therefore the area Mod is required).
 
 ![Tower Crane](https://github.com/joe7575/Minetest-Towercrane/blob/master/towercrane640.png)
@@ -37,9 +37,6 @@ The owner of the crane gets automatically area protection over the complete cons
   **Hint:** The protection area of the crane will also be removed.  
   In order to protect your building again, you have to use the normal chat commands.
 
-
-## To Do:
-- output the crane hook coordinates in the HUD relative to a predefined reference position
 
 ## Dependencies
 default  
