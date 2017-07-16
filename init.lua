@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.06 by JoSt
+	v0.07 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -16,6 +16,7 @@
 	2017-06-08  v0.04  recipe and rope length now configurable
 	2017-06-10  v0.05  resizing bugfix, area protection added
 	2017-07-11  v0.06  fixed the space check bug, settingtypes added
+	2017-07-16  v0.07  crane remove bug fix
 
 ]]--
 
@@ -244,7 +245,8 @@ end
 ----------------------------------------------------------------------------------------------------
 local function remove_crane(pos, dir, height, width)
 	local remove = function(pos, node_name, tArg)
-		if minetest.get_node_or_nil(pos).name == node_name then
+		if minetest.get_node_or_nil(pos).name == node_name or
+				minetest.get_node_or_nil(pos).name == "towercrane:mast_ctrl_on" then
 			minetest.remove_node(pos)
 		end
 	end
