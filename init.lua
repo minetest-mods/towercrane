@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.07 by JoSt
+	v0.08 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -17,6 +17,7 @@
 	2017-06-10  v0.05  resizing bugfix, area protection added
 	2017-07-11  v0.06  fixed the space check bug, settingtypes added
 	2017-07-16  v0.07  crane remove bug fix
+	3017-07-16  v0.08  player times out bugfix
 
 ]]--
 
@@ -89,6 +90,9 @@ function hook:on_step(dtime)
 		local max_speed = 5
 		local velocity = 0.5
 
+		if yaw == nil or pos == nil or ctrl == nil then
+			return
+		end
 		if ctrl.up then             -- forward
 			self.speed_forward = math.min(self.speed_forward + velocity, max_speed)
 		elseif ctrl.down then       -- backward
@@ -302,7 +306,7 @@ local function protect_area(pos, dir, height, width, owner)
 	-- add area
 	local canAdd, errMsg = areas:canPlayerAddArea(pos1, pos2, owner)
 	if canAdd then
-		local id = areas:add(owner, owner .. "'s construction site", pos1, pos2, nil)
+		local id = areas:add(owner, "Construction site", pos1, pos2, nil)
 		areas:save()
 		return id
 	end
