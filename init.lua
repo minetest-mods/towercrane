@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.08 by JoSt
+	v0.09 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -17,14 +17,82 @@
 	2017-06-10  v0.05  resizing bugfix, area protection added
 	2017-07-11  v0.06  fixed the space check bug, settingtypes added
 	2017-07-16  v0.07  crane remove bug fix
-	3017-07-16  v0.08  player times out bugfix
+	2017-07-16  v0.08  player times out bugfix
+	2017-08-19  v0.09  crane protection area to prevent crane clusters
 
 ]]--
 
+-- crane minimum size
+MIN_SIZE = 8		
 
 towercrane = {}
 
 dofile(minetest.get_modpath("towercrane") .. "/config.lua")
+
+local function chat(owner, text)
+	if owner ~= nil then
+		minetest.chat_send_player(owner, "[Tower Crane] "..text)
+	end
+end
+
+
+--##################################################################################################
+--##  Construction Area
+--##################################################################################################
+
+-- Areas = {
+--     pos_key = {owner="...", pos1=pos, pos2=pos},
+-- }
+local storage = minetest.get_mod_storage()
+local Areas = minetest.deserialize(storage:get_string("Areas")) or {}
+
+local function update_mod_storage()
+	storage:set_string("Areas", minetest.serialize(Areas))
+end
+
+minetest.register_on_shutdown(function()
+	update_mod_storage()
+end)
+
+----------------------------------------------------------------------------------------------------
+-- The same player can't place a crane within another protection area
+----------------------------------------------------------------------------------------------------
+local function no_area_violation(owner, pos)
+	local res = true
+	local px, py, pz = pos.x, pos.y, pos.z
+	for key, area in pairs(Areas) do
+		if owner == area.owner then
+			local pos1, pos2 = area.pos1, area.pos2
+			if (px >= pos1.x and px <= pos2.x) and (py >= pos1.y and py <= pos2.y) and
+					(pz >= pos1.z and pz <= pos2.z) then
+				res = false
+				break
+			end
+		end
+	end
+	return res
+end
+
+
+local function store_crane_data(owner, pos, pos1, pos2)
+	-- normalize x/z so that pos2 > pos1
+	if pos2.x < pos1.x then
+		pos2.x, pos1.x = pos1.x, pos2.x
+	end
+	if pos2.z < pos1.z then
+		pos2.z, pos1.z = pos1.z, pos2.z
+	end
+	-- store data
+	local key = minetest.pos_to_string(pos)
+	Areas[key] = {owner=owner, pos1=pos1, pos2=pos2}
+	update_mod_storage()
+end
+	
+local function remove_crane_data(pos)
+	local key = minetest.pos_to_string(pos)
+	Areas[key] = nil
+	update_mod_storage()
+end
 
 --##################################################################################################
 --##  Tower Crane Hook
@@ -303,6 +371,8 @@ local function protect_area(pos, dir, height, width, owner)
 	pos2 = vector.add(pos2, vector.multiply(dir, width))
 	pos2.y = pos.y + 2 + height
 
+	store_crane_data(owner, pos, pos1, pos2)
+
 	-- add area
 	local canAdd, errMsg = areas:canPlayerAddArea(pos1, pos2, owner)
 	if canAdd then
@@ -333,11 +403,9 @@ local function check_input(fields)
 		local height = tonumber(size[1])
 		local width = tonumber(size[2])
 		if height ~= nil and width ~= nil then
-			--height = math.max(height, 8)
-			height = math.max(height, 2)
+			height = math.max(height, MIN_SIZE)
 			height = math.min(height, towercrane.max_height)
-			--width = math.max(width, 8)
-			width = math.max(width, 2)
+			width = math.max(width, MIN_SIZE)
 			width = math.min(width, towercrane.max_width)
 			return height, width
 		end
@@ -400,6 +468,7 @@ minetest.register_node("towercrane:base", {
 		end
 		-- destroy area and crane
 		if dir ~= nil and height ~= nil and width ~= nil then
+			remove_crane_data(pos)
 			remove_area(id, owner)
 			remove_crane(table.copy(pos), dir, height, width)
 		end
@@ -410,19 +479,23 @@ minetest.register_node("towercrane:base", {
 			meta:set_int("height", height)
 			meta:set_int("width", width)
 			meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
-			if dir ~= nil then
-				if check_space(table.copy(pos), dir, height, width) then
-					-- add protection area
-					local id = protect_area(table.copy(pos), table.copy(dir), height, width, owner)
-					if id ~= nil then
-						meta:set_int("id", id)
-						construct_crane(table.copy(pos), table.copy(dir), height, width, owner)
+			if no_area_violation(owner, pos) then
+				if dir ~= nil then
+					if check_space(table.copy(pos), dir, height, width) then
+						-- add protection area
+						local id = protect_area(table.copy(pos), table.copy(dir), height, width, owner)
+						if id ~= nil then
+							meta:set_int("id", id)
+							construct_crane(table.copy(pos), table.copy(dir), height, width, owner)
+						else
+							chat(owner, "Construction area is already protected!")
+						end
 					else
-						minetest.chat_send_player(owner, "Construction area is already protected!")
+						chat(owner, "Too less space to raise up the crane!")
 					end
-				else
-					minetest.chat_send_player(owner, "Too less space to raise up the tower crane!")
 				end
+			else
+				chat(owner, "Too less distance to your other crane(s)!")
 			end
 		end
 	end,
@@ -442,7 +515,8 @@ minetest.register_node("towercrane:base", {
 		end
 		-- remove crane
 		if dir ~= nil and height ~= nil and width ~= nil then
-		   remove_crane(pos, dir, height, width)
+			remove_crane_data(pos)
+			remove_crane(pos, dir, height, width)
 		end
 		-- remove hook
 		id = minetest.hash_node_position(pos)
