@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.09 by JoSt
+	v0.10 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -19,6 +19,7 @@
 	2017-07-16  v0.07  crane remove bug fix
 	2017-07-16  v0.08  player times out bugfix
 	2017-08-19  v0.09  crane protection area to prevent crane clusters
+	2017-08-27  v0.10  hook instance and sound switch off bug fixes
 
 ]]--
 
@@ -26,6 +27,7 @@
 MIN_SIZE = 8		
 
 towercrane = {}
+towercrane.hook = {}
 
 dofile(minetest.get_modpath("towercrane") .. "/config.lua")
 
@@ -323,7 +325,7 @@ local function remove_crane(pos, dir, height, width)
 		end
 	end
 	
-	crane_body_plan(pos, dir, height, width, remove, {})
+	crane_body_plan(table.copy(pos), dir, height, width, remove, {})
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -336,6 +338,26 @@ local function place_hook(pos, dir)
 	return minetest.add_entity(pos, "towercrane:hook")
 end
 
+----------------------------------------------------------------------------------------------------
+-- Remove hook, reset player and stop sound
+----------------------------------------------------------------------------------------------------
+local function remove_hook(player, pos, y_offs)
+	-- determine hook_key
+	pos = table.copy(pos)
+	pos.y = pos.y + y_offs
+	local key = minetest.hash_node_position(pos)
+	default.player_set_animation(player, "stand" , 10)
+	local hook = towercrane.hook[key]
+	if hook then
+		-- remove hook
+		hook:remove()
+		if hook:get_luaentity().sound ~= nil then
+			-- stop sound
+			minetest.sound_stop(hook:get_luaentity().sound)
+		end
+		towercrane.hook[key] = nil
+	end
+end
 
 ----------------------------------------------------------------------------------------------------
 -- Check if the given construction area is not already protected
@@ -343,7 +365,6 @@ end
 local function check_area(pos1, pos2, owner)
 	if not areas then return true end
 	for id, a in ipairs(areas:getAreasIntersectingArea(pos1, pos2)) do
-		print(dump(a.owner))
 		if a.owner ~= owner then
 			return false
 		end
@@ -471,6 +492,7 @@ minetest.register_node("towercrane:base", {
 			remove_crane_data(pos)
 			remove_area(id, owner)
 			remove_crane(table.copy(pos), dir, height, width)
+			remove_hook(player, pos, 1)
 		end
 
 		-- evaluate user input
@@ -519,11 +541,8 @@ minetest.register_node("towercrane:base", {
 			remove_crane(pos, dir, height, width)
 		end
 		-- remove hook
-		id = minetest.hash_node_position(pos)
-		if towercrane.id then
-			towercrane.id:remove()
-			towercrane.id = nil
-		end
+		local player = minetest.get_player_by_name(owner)
+		remove_hook(player, pos, 1)
 	end,
 })
 
@@ -591,10 +610,7 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		minetest.swap_node(pos, node)
 
 		local id = minetest.hash_node_position(pos)
-		if towercrane.id then
-			towercrane.id:remove()
-			towercrane.id = nil
-		end
+		remove_hook(clicker, pos, 0)
 	end,
 
 	on_construct = function(pos)
@@ -645,7 +661,7 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 		if pos ~= nil and dir ~= nil then
 			-- store hook instance in 'towercrane'
 			local id = minetest.hash_node_position(pos)
-			towercrane.id = place_hook(table.copy(pos), dir)
+			towercrane.hook[id] = place_hook(table.copy(pos), dir)
 
 			--
 			-- calculate the construction area dimension (pos1, pos2)
@@ -675,8 +691,8 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			end
 
 			-- store pos1/pos2 in the hook (LuaEntitySAO)
-			towercrane.id:get_luaentity().pos1 = pos1
-			towercrane.id:get_luaentity().pos2 = pos2
+			towercrane.hook[id]:get_luaentity().pos1 = pos1
+			towercrane.hook[id]:get_luaentity().pos2 = pos2
 		end
 	end,
 
