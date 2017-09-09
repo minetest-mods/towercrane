@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.10 by JoSt
+	v0.11 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -20,6 +20,7 @@
 	2017-07-16  v0.08  player times out bugfix
 	2017-08-19  v0.09  crane protection area to prevent crane clusters
 	2017-08-27  v0.10  hook instance and sound switch off bug fixes
+	2017-09-09  v0.11  further player bugfixes
 
 ]]--
 
@@ -346,12 +347,14 @@ local function remove_hook(player, pos, y_offs)
 	pos = table.copy(pos)
 	pos.y = pos.y + y_offs
 	local key = minetest.hash_node_position(pos)
-	default.player_set_animation(player, "stand" , 10)
+	if player ~= nil then
+		default.player_set_animation(player, "stand" , 10)
+	end
 	local hook = towercrane.hook[key]
 	if hook then
 		-- remove hook
 		hook:remove()
-		if hook:get_luaentity().sound ~= nil then
+		if hook and hook:get_luaentity() and hook:get_luaentity().sound ~= nil then
 			-- stop sound
 			minetest.sound_stop(hook:get_luaentity().sound)
 		end
