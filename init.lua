@@ -21,6 +21,7 @@
 	2017-08-19  v0.09  crane protection area to prevent crane clusters
 	2017-08-27  v0.10  hook instance and sound switch off bug fixes
 	2017-09-09  v0.11  further player bugfixes
+	2017-09-20  v0.12  Switched from entity model to real fly privs
 
 ]]--
 
@@ -28,7 +29,6 @@
 MIN_SIZE = 8		
 
 towercrane = {}
-towercrane.hook = {}
 
 dofile(minetest.get_modpath("towercrane") .. "/config.lua")
 
@@ -97,139 +97,95 @@ local function remove_crane_data(pos)
 	update_mod_storage()
 end
 
+	
 --##################################################################################################
---##  Tower Crane Hook
+--##  Tower Crane Hook (player)
 --##################################################################################################
-local hook = {
-	physical = true,
-	collisionbox = {-0.2, -0.2, -0.2, 0.2, 0.2, 0.2},
-	collide_with_objects = false,
-	visual = "cube",
-	visual_size = {x=0.6, y=0.6},
-	textures = {
-		"towercrane_hook.png",
-		"towercrane_hook.png",
-		"towercrane_hook.png",
-		"towercrane_hook.png",
-		"towercrane_hook.png",
-		"towercrane_hook.png",
-	},
-	groups = {cracky=1},
-	-- local variabels
-	driver = nil,
-	speed_forward=0,
-	speed_right=0,
-	speed_up=0,
-	sound=nil,
-}
 
-----------------------------------------------------------------------------------------------------
--- Enter/leave the Hook
-----------------------------------------------------------------------------------------------------
-function hook:on_rightclick(clicker)
-	local name = clicker:get_player_name()
-	if self.driver and clicker == self.driver then  -- leave?
-		clicker:set_detach()
-		default.player_attached[name] = false
-		default.player_set_animation(clicker, "stand" , 10)
-		self.driver = nil
-		if self.sound ~= nil then
-			minetest.sound_stop(self.sound)
-			self.sound = nil
-		end
-	elseif not self.driver then                     -- enter?
-		self.driver = clicker
-		clicker:set_attach(self.object, "", {x=0,y=15,z=-3}, {x=0,y=0,z=0})
-		default.player_attached[name] = true
-		default.player_set_animation(clicker, "sit" , 10)
-	end
-end
-
-----------------------------------------------------------------------------------------------------
--- Hook control
-----------------------------------------------------------------------------------------------------
-function hook:on_step(dtime)
-	-- remove hook from  last visit
-	if self.pos1 == nil or self.pos2 == nil then
-		self.object:remove()
-		return
-	end
-	if self.driver then
-		local ctrl = self.driver:get_player_control()
-		local yaw = self.driver:get_look_horizontal()
-		local pos = self.driver:getpos()
-		local max_speed = 5
-		local velocity = 0.5
-
-		if yaw == nil or pos == nil or ctrl == nil then
-			return
-		end
-		if ctrl.up then             -- forward
-			self.speed_forward = math.min(self.speed_forward + velocity, max_speed)
-		elseif ctrl.down then       -- backward
-			self.speed_forward = math.max(self.speed_forward - velocity, -max_speed)
-		elseif self.speed_forward > 0 then
-			self.speed_forward = self.speed_forward - velocity
-		elseif self.speed_forward < 0 then
-			self.speed_forward = self.speed_forward + velocity
-		end
-
-		if ctrl.right then          -- right
-			self.speed_right = math.min(self.speed_right + velocity, max_speed)
-		elseif ctrl.left then       -- left
-			self.speed_right = math.max(self.speed_right - velocity, -max_speed)
-		elseif self.speed_right > 0 then
-			self.speed_right = self.speed_right - velocity
-		elseif self.speed_right < 0 then
-			self.speed_right = self.speed_right + velocity
-		end
-
-		if ctrl.jump then           -- up
-			self.speed_up = math.min(self.speed_up + velocity, 5)
-		elseif ctrl.sneak then      -- down
-			self.speed_up = math.max(self.speed_up - velocity, -5)
-		elseif self.speed_up > 0 then
-			self.speed_up = self.speed_up - velocity
-		elseif self.speed_up < 0 then
-			self.speed_up = self.speed_up + velocity
-		end
-
-		-- calculate the direction vector
-		local vx = math.cos(yaw+math.pi/2) * self.speed_forward + math.cos(yaw) * self.speed_right
-		local vz = math.sin(yaw+math.pi/2) * self.speed_forward + math.sin(yaw) * self.speed_right
-
-		-- check if outside of the construction area
-		if pos.x < self.pos1.x then vx= velocity end
-		if pos.x > self.pos2.x then vx= -velocity end
-		if pos.y < self.pos1.y then self.speed_up=  velocity end
-		if pos.y > self.pos2.y then self.speed_up= -velocity end
-		if pos.z < self.pos1.z then vz=  velocity end
-		if pos.z > self.pos2.z then vz= -velocity end
-
-		-- sound control
-		if vx ~= 0 or vz ~= 0 or self.speed_up ~= 0 then
-			if self.sound == nil then
-				self.sound = minetest.sound_play({name="crane"},{object=self.object, pos=pos,
-												 gain=towercrane.gain, max_hear_distance=20,
-												 loop=true})
+-- give/take player fly privs
+local function fly_privs(player, enable)
+	local privs = minetest.get_player_privs(player:get_player_name())
+	local physics = player:get_physics_override()
+	if privs then
+		if enable == true then
+			if privs["fast"] then
+				player:set_attribute("store_fast", "1")
+			else
+				player:set_attribute("store_fast", "0")
 			end
-		elseif self.sound ~= nil then
-			minetest.sound_stop(self.sound)
-			self.sound = nil
+			privs["fly"] = true
+			privs["fast"] = nil
+			physics.speed = 0.5
+		else
+			privs["fly"] = nil
+			if player:get_attribute("store_fast") == "1" then
+				privs["fast"] = true
+			else
+				privs["fast"] = nil
+			end
+			physics.speed = 1
 		end
-
-		self.object:setvelocity({x=vx, y=self.speed_up,z=vz})
-	else
-		self.object:setvelocity({x=0, y=0,z=0})
+		player:set_physics_override(physics)
+		minetest.set_player_privs(player:get_player_name(), privs)
 	end
 end
 
-----------------------------------------------------------------------------------------------------
--- LuaEntitySAO (non-player moving things): see http://dev.minetest.net/LuaEntitySAO
-----------------------------------------------------------------------------------------------------
-minetest.register_entity("towercrane:hook", hook)
+local function control_player(pos, pos1, pos2, player)
+	if player then
+		local meta = minetest.get_meta(pos)
+		local running = meta:get_int("running")
+		if running == 1 then
+			-- check if outside of the construction area
+			local correction = false
+			local pl_pos = player:getpos()
+			if pl_pos then
+				if pl_pos.x < pos1.x then pl_pos.x = pos1.x; correction = true end
+				if pl_pos.x > pos2.x then pl_pos.x = pos2.x; correction = true end
+				if pl_pos.y < pos1.y then pl_pos.y = pos1.y; correction = true end
+				if pl_pos.y > pos2.y then pl_pos.y = pos2.y; correction = true end
+				if pl_pos.z < pos1.z then pl_pos.z = pos1.z; correction = true end
+				if pl_pos.z > pos2.z then pl_pos.z = pos2.z; correction = true end
+				if correction == true then
+					player:setpos(pl_pos)	
+				end
+				
+				minetest.after(2, control_player, pos, pos1, pos2, player)
+			end
+		end
+	else
+		local meta = minetest.get_meta(pos)
+		meta:set_int("running", 0)
+	end
+end	
+	
+-- Place the player in front of the base and give fly privs
+local function place_hook(pos, dir, player, pos1, pos2)
+	if player then
+		local switch_pos = {x=pos.x, y=pos.y, z=pos.z}
+		local meta = minetest.get_meta(switch_pos)
+		meta:set_int("running", 1)
+		-- place the player
+		pos.y = pos.y - 1
+		pos.x = pos.x + dir.x
+		pos.z = pos.z + dir.z
+		player:setpos(pos)
+		-- set privs
+		fly_privs(player, true)
+		-- control player every 2 sec.
+		minetest.after(2, control_player, switch_pos, pos1, pos2, player)
+	end
+end	
 
-
+-- Normalize the player privs
+local function remove_hook(pos, player)
+	if player then
+		if pos then
+			local meta = minetest.get_meta(pos)
+			meta:set_int("running", 0)
+		end
+		fly_privs(player, nil)
+	end
+end
 
 --##################################################################################################
 --##  Tower Crane
@@ -329,38 +285,6 @@ local function remove_crane(pos, dir, height, width)
 	crane_body_plan(table.copy(pos), dir, height, width, remove, {})
 end
 
-----------------------------------------------------------------------------------------------------
--- Place the hook in front of the base
-----------------------------------------------------------------------------------------------------
-local function place_hook(pos, dir)
-	pos.y = pos.y - 1
-	pos.x = pos.x + dir.x
-	pos.z = pos.z + dir.z
-	return minetest.add_entity(pos, "towercrane:hook")
-end
-
-----------------------------------------------------------------------------------------------------
--- Remove hook, reset player and stop sound
-----------------------------------------------------------------------------------------------------
-local function remove_hook(player, pos, y_offs)
-	-- determine hook_key
-	pos = table.copy(pos)
-	pos.y = pos.y + y_offs
-	local key = minetest.hash_node_position(pos)
-	if player ~= nil then
-		default.player_set_animation(player, "stand" , 10)
-	end
-	local hook = towercrane.hook[key]
-	if hook then
-		-- remove hook
-		hook:remove()
-		if hook and hook:get_luaentity() and hook:get_luaentity().sound ~= nil then
-			-- stop sound
-			minetest.sound_stop(hook:get_luaentity().sound)
-		end
-		towercrane.hook[key] = nil
-	end
-end
 
 ----------------------------------------------------------------------------------------------------
 -- Check if the given construction area is not already protected
@@ -494,8 +418,8 @@ minetest.register_node("towercrane:base", {
 		if dir ~= nil and height ~= nil and width ~= nil then
 			remove_crane_data(pos)
 			remove_area(id, owner)
-			remove_crane(table.copy(pos), dir, height, width)
-			remove_hook(player, pos, 1)
+			--remove_crane(table.copy(pos), dir, height, width)
+			remove_hook(pos, player)
 		end
 
 		-- evaluate user input
@@ -525,6 +449,15 @@ minetest.register_node("towercrane:base", {
 		end
 	end,
 
+	can_dig = function(pos, player)
+		local meta = minetest.get_meta(pos)
+		local owner = meta:get_string("owner")
+		if player:get_player_name() == owner then
+			return true
+		end
+		return false
+	end,
+	
 	-- remove mast and arm if base gets destroyed
 	on_destruct = function(pos)
 		local meta = minetest.get_meta(pos)
@@ -545,7 +478,7 @@ minetest.register_node("towercrane:base", {
 		end
 		-- remove hook
 		local player = minetest.get_player_by_name(owner)
-		remove_hook(player, pos, 1)
+		remove_hook({x=pos.x, y=pos.y+1, z=pos.z}, player)
 	end,
 })
 
@@ -595,10 +528,10 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 	tiles = {
 		"towercrane_mast_ctrl.png",
 		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl_on.png",
-		"towercrane_mast_ctrl_on.png",
 		"towercrane_mast_ctrl.png",
 		"towercrane_mast_ctrl.png",
+		"towercrane_mast_ctrl_on.png",
+		"towercrane_mast_ctrl_on.png",
 	},
 	-- switch the crane OFF
 	on_rightclick = function (pos, node, clicker)
@@ -613,7 +546,7 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		minetest.swap_node(pos, node)
 
 		local id = minetest.hash_node_position(pos)
-		remove_hook(clicker, pos, 0)
+		remove_hook(pos, clicker)
 	end,
 
 	on_construct = function(pos)
@@ -641,10 +574,10 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 	tiles = {
 		"towercrane_mast_ctrl.png",
 		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl_off.png",
-		"towercrane_mast_ctrl_off.png",
 		"towercrane_mast_ctrl.png",
-	  "towercrane_mast_ctrl.png",
+		"towercrane_mast_ctrl.png",
+		"towercrane_mast_ctrl_off.png",
+		"towercrane_mast_ctrl_off.png",
 	},
 	-- switch the crane ON
 	on_rightclick = function (pos, node, clicker)
@@ -662,10 +595,6 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 		minetest.swap_node(pos, node)
 		local dir = minetest.string_to_pos(meta:get_string("dir"))
 		if pos ~= nil and dir ~= nil then
-			-- store hook instance in 'towercrane'
-			local id = minetest.hash_node_position(pos)
-			towercrane.hook[id] = place_hook(table.copy(pos), dir)
-
 			--
 			-- calculate the construction area dimension (pos1, pos2)
 			--
@@ -676,7 +605,7 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			dir = turnright(dir)
 			local pos1 = vector.add(pos, vector.multiply(dir, width/2))
 			dir = turnleft(dir)
-			local pos1 = vector.add(pos1, vector.multiply(dir, 1))
+			pos1 = vector.add(pos1, vector.multiply(dir, 1))
 			pos1.y = pos.y - 2 + height - towercrane.rope_length
 
 			-- pos2 = far/left/above
@@ -692,10 +621,9 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			if pos2.z < pos1.z then
 				pos2.z, pos1.z = pos1.z, pos2.z
 			end
-
-			-- store pos1/pos2 in the hook (LuaEntitySAO)
-			towercrane.hook[id]:get_luaentity().pos1 = pos1
-			towercrane.hook[id]:get_luaentity().pos2 = pos2
+			
+			dir = minetest.string_to_pos(meta:get_string("dir"))
+			place_hook(pos, dir, clicker, pos1, pos2)
 		end
 	end,
 
@@ -770,5 +698,9 @@ if towercrane.recipe then
 	})
 end
 
+
+minetest.register_on_leaveplayer(function(player, timed_out)
+	remove_hook(nil, player)
+end)
 
 
