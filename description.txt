@@ -1,1 +1,1 @@
-To simplify the construction of buildings, the crane forms a working area, in which the player can fly.
+To simplify the construction of buildings, the crane forms a working area, in which the player gets fly privs.

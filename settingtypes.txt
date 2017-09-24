@@ -9,9 +9,6 @@ towercrane_max_width (maximum crane width) int 24
 # can be placed on buildings and the hook still reaches the ground.
 towercrane_rope_length (crane rope lenght) int 24
 
-# Gain factor for the crane sound (0.0 to 1)
-towercrane_gain (sound gain factor) float 1
-
 # Recipe available (true/false)
 towercrane_recipe (recipe available) bool true
 

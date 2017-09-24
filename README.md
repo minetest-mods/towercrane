@@ -1,5 +1,5 @@
-# Tower Crane Mod V0.10
-In order to simplify the construction of buildings, the crane forms a construction area in which the player can fly (similar to fly privs).
+# Tower Crane Mod V0.12
+In order to simplify the construction of buildings, the crane forms a construction area in which the player gets fly privs.
 
 Browse on: ![GitHub](https://github.com/joe7575/Minetest-Towercrane)
 
@@ -21,17 +21,7 @@ The owner of the crane gets automatically area protection over the complete cons
   If there is not enough free space for the crane mast/arm or the potential construction area of the 
   crane intersects a protected area from another player, the crane will not be build.
 
-* Right-click the crane switch block to place the hook in front of the crane mast
-
-* Enter the hook by right-clicking the hook
-
-* "Fly" within the working area (height, width) by means of the (default) controls
-  - Move mouse: Look around
-  - W, A, S, D: Move
-  - Space: move up
-  - Shift: move down
-
-* Leave the hook by right-clicking the hook or right-clicking the crane switch node
+* Right-click the crane switch block to switch to fly privs. The player will be placed in front of the crane.
 
 * To remove the crane, destroy the base block.  
   **Hint:** The protection area of the crane will also be removed.  

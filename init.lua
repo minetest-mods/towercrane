@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.11 by JoSt
+	v0.12 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -102,31 +102,27 @@ end
 --##  Tower Crane Hook (player)
 --##################################################################################################
 
--- give/take player fly privs
+-- give/take player the necessary privs/physics
 local function fly_privs(player, enable)
 	local privs = minetest.get_player_privs(player:get_player_name())
 	local physics = player:get_physics_override()
 	if privs then
+		print("vorher", minetest.privs_to_string(privs))
 		if enable == true then
-			if privs["fast"] then
-				player:set_attribute("store_fast", "1")
-			else
-				player:set_attribute("store_fast", "0")
-			end
+			player:set_attribute("store_fast", minetest.serialize(privs["fast"]))
+			player:set_attribute("store_fly", minetest.serialize(privs["fly"]))
+			player:set_attribute("store_speed", minetest.serialize(physics.speed))
 			privs["fly"] = true
 			privs["fast"] = nil
 			physics.speed = 0.5
 		else
-			privs["fly"] = nil
-			if player:get_attribute("store_fast") == "1" then
-				privs["fast"] = true
-			else
-				privs["fast"] = nil
-			end
-			physics.speed = 1
+			privs["fast"] = minetest.deserialize(player:get_attribute("store_fast"))
+			privs["fly"] = minetest.deserialize(player:get_attribute("store_fly"))
+			physics.speed = minetest.deserialize(player:get_attribute("store_speed"))
 		end
 		player:set_physics_override(physics)
 		minetest.set_player_privs(player:get_player_name(), privs)
+		print("nachher", minetest.privs_to_string(privs))
 	end
 end
 
@@ -146,10 +142,17 @@ local function control_player(pos, pos1, pos2, player)
 				if pl_pos.z < pos1.z then pl_pos.z = pos1.z; correction = true end
 				if pl_pos.z > pos2.z then pl_pos.z = pos2.z; correction = true end
 				if correction == true then
-					player:setpos(pl_pos)	
+					if minetest.get_node(pl_pos).name == "air" then
+						player:setpos(pl_pos)	
+					else
+						local last_pos = minetest.string_to_pos(meta:get_string("last_known_pos"))
+						player:setpos(last_pos)	
+					end
+				else  -- store last known correct position
+					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
 				end
 				
-				minetest.after(2, control_player, pos, pos1, pos2, player)
+				minetest.after(1, control_player, pos, pos1, pos2, player)
 			end
 		end
 	else
@@ -169,10 +172,11 @@ local function place_hook(pos, dir, player, pos1, pos2)
 		pos.x = pos.x + dir.x
 		pos.z = pos.z + dir.z
 		player:setpos(pos)
+		meta:set_string("last_known_pos", minetest.pos_to_string(pos))
 		-- set privs
 		fly_privs(player, true)
-		-- control player every 2 sec.
-		minetest.after(2, control_player, switch_pos, pos1, pos2, player)
+		-- control player every second
+		minetest.after(1, control_player, switch_pos, pos1, pos2, player)
 	end
 end	
 
@@ -242,7 +246,7 @@ end
 ----------------------------------------------------------------------------------------------------
 local function check_space(pos, dir, height, width)
 	local remove = function(pos, node_name, tArg)
-		if minetest.get_node_or_nil(pos).name ~= "air" then
+		if minetest.get_node(pos).name ~= "air" then
 			tArg.res = false
 		end
 	end
@@ -276,8 +280,8 @@ end
 ----------------------------------------------------------------------------------------------------
 local function remove_crane(pos, dir, height, width)
 	local remove = function(pos, node_name, tArg)
-		if minetest.get_node_or_nil(pos).name == node_name or
-				minetest.get_node_or_nil(pos).name == "towercrane:mast_ctrl_on" then
+		if minetest.get_node(pos).name == node_name or
+				minetest.get_node(pos).name == "towercrane:mast_ctrl_on" then
 			minetest.remove_node(pos)
 		end
 	end
@@ -398,10 +402,17 @@ minetest.register_node("towercrane:base", {
 	-- evaluate user input (height, width), destroyed old crane and build a new one with
 	-- the given size
 	on_receive_fields = function(pos, formname, fields, player)
+		local switch_pos = {x=pos.x, y=pos.y+1, z=pos.z}
 		if fields.size == nil then
 			return
 		end
-		local meta = minetest.get_meta(pos)
+		local meta = minetest.get_meta(switch_pos)
+		local running = meta:get_int("running")
+		if running == 1 then
+			return
+		end
+		
+		meta = minetest.get_meta(pos)
 		local owner = meta:get_string("owner")
 		local dir = minetest.string_to_pos(meta:get_string("dir"))
 		local height = meta:get_int("height")
@@ -418,7 +429,7 @@ minetest.register_node("towercrane:base", {
 		if dir ~= nil and height ~= nil and width ~= nil then
 			remove_crane_data(pos)
 			remove_area(id, owner)
-			--remove_crane(table.copy(pos), dir, height, width)
+			remove_crane(table.copy(pos), dir, height, width)
 			remove_hook(pos, player)
 		end
 
@@ -446,16 +457,24 @@ minetest.register_node("towercrane:base", {
 			else
 				chat(owner, "Too less distance to your other crane(s)!")
 			end
+		else
+			chat(owner, "Invalid input!")
 		end
 	end,
 
 	can_dig = function(pos, player)
+		local switch_pos = {x=pos.x, y=pos.y+1, z=pos.z}
 		local meta = minetest.get_meta(pos)
 		local owner = meta:get_string("owner")
-		if player:get_player_name() == owner then
-			return true
+		if player:get_player_name() ~= owner then
+			return false
 		end
-		return false
+		meta = minetest.get_meta(switch_pos)
+		local running = meta:get_int("running")
+		if running == 1 then
+			return false
+		end
+		return true
 	end,
 	
 	-- remove mast and arm if base gets destroyed
