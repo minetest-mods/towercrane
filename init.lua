@@ -21,7 +21,7 @@
 	2017-08-19  v0.09  crane protection area to prevent crane clusters
 	2017-08-27  v0.10  hook instance and sound switch off bug fixes
 	2017-09-09  v0.11  further player bugfixes
-	2017-09-20  v0.12  Switched from entity model to real fly privs
+	2017-09-24  v0.12  Switched from entity hook model to real fly privs
 
 ]]--
 
@@ -107,7 +107,6 @@ local function fly_privs(player, enable)
 	local privs = minetest.get_player_privs(player:get_player_name())
 	local physics = player:get_physics_override()
 	if privs then
-		print("vorher", minetest.privs_to_string(privs))
 		if enable == true then
 			player:set_attribute("store_fast", minetest.serialize(privs["fast"]))
 			player:set_attribute("store_fly", minetest.serialize(privs["fly"]))
@@ -122,7 +121,6 @@ local function fly_privs(player, enable)
 		end
 		player:set_physics_override(physics)
 		minetest.set_player_privs(player:get_player_name(), privs)
-		print("nachher", minetest.privs_to_string(privs))
 	end
 end
 
@@ -717,7 +715,7 @@ if towercrane.recipe then
 	})
 end
 
-
+-- switch back to normal player privs
 minetest.register_on_leaveplayer(function(player, timed_out)
 	remove_hook(nil, player)
 end)
