@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.12 by JoSt
+	v0.13 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -22,6 +22,7 @@
 	2017-08-27  v0.10  hook instance and sound switch off bug fixes
 	2017-09-09  v0.11  further player bugfixes
 	2017-09-24  v0.12  Switched from entity hook model to real fly privs
+	2017-10-17  v0.13  Area protection bugfix
 
 ]]--
 
@@ -113,7 +114,7 @@ local function fly_privs(player, enable)
 			player:set_attribute("store_speed", minetest.serialize(physics.speed))
 			privs["fly"] = true
 			privs["fast"] = nil
-			physics.speed = 0.5
+			physics.speed = 0.7
 		else
 			privs["fast"] = minetest.deserialize(player:get_attribute("store_fast"))
 			privs["fly"] = minetest.deserialize(player:get_attribute("store_fly"))
@@ -240,16 +241,18 @@ local function crane_body_plan(pos, dir, height, width, clbk, tArg)
 end
 
 ----------------------------------------------------------------------------------------------------
--- Check space for mast and arm
+-- Check space are protection for mast and arm
 ----------------------------------------------------------------------------------------------------
-local function check_space(pos, dir, height, width)
+local function check_space(pos, dir, height, width, owner)
 	local remove = function(pos, node_name, tArg)
 		if minetest.get_node(pos).name ~= "air" then
+			tArg.res = false
+		elseif minetest.is_protected(pos, tArg.owner) then
 			tArg.res = false
 		end
 	end
 		
-	local tArg = {res = true}
+	local tArg = {res = true, owner = owner}
 	crane_body_plan(pos, dir, height, width, remove, tArg)
 	return tArg.res
 end
@@ -285,20 +288,6 @@ local function remove_crane(pos, dir, height, width)
 	end
 	
 	crane_body_plan(table.copy(pos), dir, height, width, remove, {})
-end
-
-
-----------------------------------------------------------------------------------------------------
--- Check if the given construction area is not already protected
-----------------------------------------------------------------------------------------------------
-local function check_area(pos1, pos2, owner)
-	if not areas then return true end
-	for id, a in ipairs(areas:getAreasIntersectingArea(pos1, pos2)) do
-		if a.owner ~= owner then
-			return false
-		end
-	end
-	return true
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -377,7 +366,10 @@ minetest.register_node("towercrane:base", {
 		"towercrane_base.png",
 		"towercrane_base.png",
 	},
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
+	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 	groups = {cracky=2},
 
@@ -439,17 +431,12 @@ minetest.register_node("towercrane:base", {
 			meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
 			if no_area_violation(owner, pos) then
 				if dir ~= nil then
-					if check_space(table.copy(pos), dir, height, width) then
+					if check_space(table.copy(pos), dir, height, width, owner) then
 						-- add protection area
-						local id = protect_area(table.copy(pos), table.copy(dir), height, width, owner)
-						if id ~= nil then
-							meta:set_int("id", id)
-							construct_crane(table.copy(pos), table.copy(dir), height, width, owner)
-						else
-							chat(owner, "Construction area is already protected!")
-						end
+						meta:set_int("id", protect_area(table.copy(pos), table.copy(dir), height, width, owner))
+						construct_crane(table.copy(pos), table.copy(dir), height, width, owner)
 					else
-						chat(owner, "Too less space to raise up the crane!")
+						chat(owner, "area is protected or too less space to raise up the crane!")
 					end
 				end
 			else
@@ -512,7 +499,9 @@ minetest.register_node("towercrane:balance", {
 		"towercrane_base.png",
 		"towercrane_base.png",
 	},
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
@@ -531,7 +520,9 @@ minetest.register_node("towercrane:mast", {
 		"towercrane_mast.png",
 		"towercrane_mast.png",
 	},
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
@@ -577,7 +568,9 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		meta:set_string("owner", owner)
 	end,
 
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
@@ -657,7 +650,9 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 		meta:set_string("owner", owner)
 	end,
 
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
@@ -676,7 +671,9 @@ minetest.register_node("towercrane:arm", {
 		"towercrane_arm.png",
 		"towercrane_arm.png",
 	},
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
@@ -695,7 +692,9 @@ minetest.register_node("towercrane:arm2", {
 		"towercrane_arm2.png",
 		"towercrane_arm2.png",
 	},
+	paramtype = "light",
 	paramtype2 = "facedir",
+	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
 })
