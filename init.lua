@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.13 by JoSt
+	v0.14 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -23,6 +23,7 @@
 	2017-09-09  v0.11  further player bugfixes
 	2017-09-24  v0.12  Switched from entity hook model to real fly privs
 	2017-10-17  v0.13  Area protection bugfix
+	2017-11-01  v0.14  Crane handing over bugfix
 
 ]]--
 
@@ -112,6 +113,7 @@ local function fly_privs(player, enable)
 			player:set_attribute("store_fast", minetest.serialize(privs["fast"]))
 			player:set_attribute("store_fly", minetest.serialize(privs["fly"]))
 			player:set_attribute("store_speed", minetest.serialize(physics.speed))
+			player:set_attribute("crane_active", "true")
 			privs["fly"] = true
 			privs["fast"] = nil
 			physics.speed = 0.7
@@ -119,6 +121,7 @@ local function fly_privs(player, enable)
 			privs["fast"] = minetest.deserialize(player:get_attribute("store_fast"))
 			privs["fly"] = minetest.deserialize(player:get_attribute("store_fly"))
 			physics.speed = minetest.deserialize(player:get_attribute("store_speed"))
+			player:set_attribute("crane_active", nil)
 		end
 		player:set_physics_override(physics)
 		minetest.set_player_privs(player:get_player_name(), privs)
@@ -598,6 +601,10 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			return
 		end
 		if clicker:get_player_name() ~= meta:get_string("owner") then
+			return
+		end
+		-- prevent handing over to the next crane
+		if clicker:get_attribute("crane_active") ~= nil then  
 			return
 		end
 		-- swap to the other node
