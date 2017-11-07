@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.14 by JoSt
+	v0.15 by JoSt
 
 	Copyright (C) 2017 Joachim Stolberg
 	LGPLv2.1+
@@ -24,6 +24,7 @@
 	2017-09-24  v0.12  Switched from entity hook model to real fly privs
 	2017-10-17  v0.13  Area protection bugfix
 	2017-11-01  v0.14  Crane handing over bugfix
+	2017-11-07  v0.15  Working zone is now restricted to areas with necessary rights
 
 ]]--
 
@@ -60,7 +61,7 @@ minetest.register_on_shutdown(function()
 end)
 
 ----------------------------------------------------------------------------------------------------
--- The same player can't place a crane within another protection area
+-- The same player can't place a crane within the same protection area
 ----------------------------------------------------------------------------------------------------
 local function no_area_violation(owner, pos)
 	local res = true
@@ -143,13 +144,14 @@ local function control_player(pos, pos1, pos2, player)
 				if pl_pos.y > pos2.y then pl_pos.y = pos2.y; correction = true end
 				if pl_pos.z < pos1.z then pl_pos.z = pos1.z; correction = true end
 				if pl_pos.z > pos2.z then pl_pos.z = pos2.z; correction = true end
+				-- check if a protected area is violated
+				if correction == false and minetest.is_protected(pl_pos, player:get_player_name()) then
+					chat(player:get_player_name(), "Area is protected.")
+					correction = true
+				end
 				if correction == true then
-					if minetest.get_node(pl_pos).name == "air" then
-						player:setpos(pl_pos)	
-					else
-						local last_pos = minetest.string_to_pos(meta:get_string("last_known_pos"))
-						player:setpos(last_pos)	
-					end
+					local last_pos = minetest.string_to_pos(meta:get_string("last_known_pos"))
+					player:setpos(last_pos)	
 				else  -- store last known correct position
 					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
 				end
