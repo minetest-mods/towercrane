@@ -433,7 +433,7 @@ minetest.register_node("towercrane:base", {
 		if height ~= 0 then
 			meta:set_int("height", height)
 			meta:set_int("width", width)
-			meta:set_string("infotext", "Crane size: " .. height .. "," .. width)
+			meta:set_string("infotext", "Owner: ".. owner ..", Crane size: " .. height .. "," .. width)
 			if no_area_violation(owner, pos) then
 				if dir ~= nil then
 					if check_space(table.copy(pos), dir, height, width, owner) then
@@ -456,7 +456,8 @@ minetest.register_node("towercrane:base", {
 		local switch_pos = {x=pos.x, y=pos.y+1, z=pos.z}
 		local meta = minetest.get_meta(pos)
 		local owner = meta:get_string("owner")
-		if player:get_player_name() ~= owner then
+		if player:get_player_name() ~= owner and 
+				not minetest.check_player_privs(player:get_player_name(), "creative") then
 			return false
 		end
 		meta = minetest.get_meta(switch_pos)
