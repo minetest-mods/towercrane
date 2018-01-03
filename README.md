@@ -1,4 +1,4 @@
-# Tower Crane Mod V0.14
+# Tower Crane Mod
 In order to simplify the construction of buildings, the crane forms a construction area in which the player gets fly privs.
 
 Browse on: ![GitHub](https://github.com/joe7575/Minetest-Towercrane)
