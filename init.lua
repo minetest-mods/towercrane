@@ -111,18 +111,15 @@ local function fly_privs(player, enable)
 	local physics = player:get_physics_override()
 	if privs then
 		if enable == true then
-			player:set_attribute("store_fast", minetest.serialize(privs["fast"]))
-			player:set_attribute("store_fly", minetest.serialize(privs["fly"]))
-			player:set_attribute("store_speed", minetest.serialize(physics.speed))
-			player:set_attribute("crane_active", "true")
+			player:set_attribute("tower_crane_active", "true")
 			privs["fly"] = true
 			privs["fast"] = nil
 			physics.speed = 0.7
 		else
-			privs["fast"] = minetest.deserialize(player:get_attribute("store_fast"))
-			privs["fly"] = minetest.deserialize(player:get_attribute("store_fly"))
-			physics.speed = minetest.deserialize(player:get_attribute("store_speed"))
-			player:set_attribute("crane_active", nil)
+			privs["fast"] = minetest.deserialize(player:get_attribute("tower_crane_store_fast"))
+			privs["fly"] = minetest.deserialize(player:get_attribute("tower_crane_store_fly"))
+			physics.speed = minetest.deserialize(player:get_attribute("tower_crane_store_speed"))
+			player:set_attribute("tower_crane_active", nil)
 		end
 		player:set_physics_override(physics)
 		minetest.set_player_privs(player:get_player_name(), privs)
@@ -723,6 +720,15 @@ if towercrane.recipe then
 		}
 	})
 end
+
+-- store standard player privs
+minetest.register_on_joinplayer(function(player)
+	local privs = minetest.get_player_privs(player:get_player_name())
+	local physics = player:get_physics_override()
+	player:set_attribute("tower_crane_store_fast", minetest.serialize(privs["fast"]))
+	player:set_attribute("tower_crane_store_fly", minetest.serialize(privs["fly"]))
+	player:set_attribute("tower_crane_store_speed", minetest.serialize(physics.speed))
+end)
 
 -- switch back to normal player privs
 minetest.register_on_leaveplayer(function(player, timed_out)
