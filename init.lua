@@ -3,9 +3,9 @@
 	Tower Crane Mod
 	===============
 
-	v0.15 by JoSt
+	v0.16 by JoSt
 
-	Copyright (C) 2017 Joachim Stolberg
+	Copyright (C) 2017-2018 Joachim Stolberg
 	LGPLv2.1+
 	See LICENSE.txt for more information
 
@@ -25,6 +25,7 @@
 	2017-10-17  v0.13  Area protection bugfix
 	2017-11-01  v0.14  Crane handing over bugfix
 	2017-11-07  v0.15  Working zone is now restricted to areas with necessary rights
+	2018-02-27  v0.16  "fly privs" bug fixed (issue #2)
 
 ]]--
 
@@ -106,12 +107,13 @@ end
 --##################################################################################################
 
 -- give/take player the necessary privs/physics
-local function fly_privs(player, enable)
+local function fly_privs(pos, player, enable)
 	local privs = minetest.get_player_privs(player:get_player_name())
 	local physics = player:get_physics_override()
-	if privs then
+	if privs and physics then
 		if enable == true then
-			player:set_attribute("tower_crane_active", "true")
+			local spos = minetest.pos_to_string(pos)
+			player:set_attribute("tower_crane_active", spos)
 			privs["fly"] = true
 			privs["fast"] = nil
 			physics.speed = 0.7
@@ -123,6 +125,17 @@ local function fly_privs(player, enable)
 		end
 		player:set_physics_override(physics)
 		minetest.set_player_privs(player:get_player_name(), privs)
+	end
+end
+
+-- Normalize the player privs
+local function remove_hook(pos, player)
+	if player then
+		if pos then
+			local meta = minetest.get_meta(pos)
+			meta:set_int("running", 0)
+		end
+		fly_privs(pos, player, nil)
 	end
 end
 
@@ -154,7 +167,11 @@ local function control_player(pos, pos1, pos2, player)
 				end
 				
 				minetest.after(1, control_player, pos, pos1, pos2, player)
+			else
+				remove_hook(pos, player)
 			end
+		else
+			remove_hook(pos, player)
 		end
 	else
 		local meta = minetest.get_meta(pos)
@@ -168,29 +185,18 @@ local function place_hook(pos, dir, player, pos1, pos2)
 		local switch_pos = {x=pos.x, y=pos.y, z=pos.z}
 		local meta = minetest.get_meta(switch_pos)
 		meta:set_int("running", 1)
+		-- set privs
+		fly_privs(pos, player, true)
 		-- place the player
 		pos.y = pos.y - 1
 		pos.x = pos.x + dir.x
 		pos.z = pos.z + dir.z
 		player:setpos(pos)
 		meta:set_string("last_known_pos", minetest.pos_to_string(pos))
-		-- set privs
-		fly_privs(player, true)
 		-- control player every second
 		minetest.after(1, control_player, switch_pos, pos1, pos2, player)
 	end
 end	
-
--- Normalize the player privs
-local function remove_hook(pos, player)
-	if player then
-		if pos then
-			local meta = minetest.get_meta(pos)
-			meta:set_int("running", 0)
-		end
-		fly_privs(player, nil)
-	end
-end
 
 --##################################################################################################
 --##  Tower Crane
@@ -422,7 +428,6 @@ minetest.register_node("towercrane:base", {
 			remove_crane_data(pos)
 			remove_area(id, owner)
 			remove_crane(table.copy(pos), dir, height, width)
-			remove_hook(pos, player)
 		end
 
 		-- evaluate user input
@@ -485,7 +490,6 @@ minetest.register_node("towercrane:base", {
 		end
 		-- remove hook
 		local player = minetest.get_player_by_name(owner)
-		remove_hook({x=pos.x, y=pos.y+1, z=pos.z}, player)
 	end,
 })
 
@@ -553,10 +557,15 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		if clicker:get_player_name() ~= meta:get_string("owner") then
 			return
 		end
+		-- Check if this is the wrong crane
+		local spos = minetest.pos_to_string(pos)
+		if clicker:get_attribute("tower_crane_active") ~= nil 
+		and clicker:get_attribute("tower_crane_active") ~= spos then  
+			return
+		end
 		node.name = "towercrane:mast_ctrl_off"
 		minetest.swap_node(pos, node)
 
-		local id = minetest.hash_node_position(pos)
 		remove_hook(pos, clicker)
 	end,
 
@@ -604,7 +613,7 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 			return
 		end
 		-- prevent handing over to the next crane
-		if clicker:get_attribute("crane_active") ~= nil then  
+		if clicker:get_attribute("tower_crane_active") ~= nil then  
 			return
 		end
 		-- swap to the other node
@@ -725,9 +734,15 @@ end
 minetest.register_on_joinplayer(function(player)
 	local privs = minetest.get_player_privs(player:get_player_name())
 	local physics = player:get_physics_override()
-	player:set_attribute("tower_crane_store_fast", minetest.serialize(privs["fast"]))
-	player:set_attribute("tower_crane_store_fly", minetest.serialize(privs["fly"]))
-	player:set_attribute("tower_crane_store_speed", minetest.serialize(physics.speed))
+	-- player still hanging on the crane?
+	if player:get_attribute("tower_crane_active") ~= nil then
+		fly_privs(nil, player, nil)
+	else
+		-- store the player privs default values
+		player:set_attribute("tower_crane_store_fast", minetest.serialize(privs["fast"]))
+		player:set_attribute("tower_crane_store_fly", minetest.serialize(privs["fly"]))
+		player:set_attribute("tower_crane_store_speed", minetest.serialize(physics.speed))
+	end
 end)
 
 -- switch back to normal player privs
