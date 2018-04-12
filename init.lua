@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.16 by JoSt
+	v0.17 by JoSt
 
 	Copyright (C) 2017-2018 Joachim Stolberg
 	LGPLv2.1+
@@ -26,6 +26,7 @@
 	2017-11-01  v0.14  Crane handing over bugfix
 	2017-11-07  v0.15  Working zone is now restricted to areas with necessary rights
 	2018-02-27  v0.16  "fly privs" bug fixed (issue #2)
+	2018-04-12  v0.17  "area owner changed" bug fixed (issue #3)
 
 ]]--
 
@@ -42,6 +43,14 @@ local function chat(owner, text)
 	end
 end
 
+local PlayerList = {}
+
+local function maintain_playerlist()
+	PlayerList = {}
+	for _,player in ipairs(minetest.get_connected_players()) do
+		PlayerList[player:get_player_name()] = true
+	end
+end
 
 --##################################################################################################
 --##  Construction Area
@@ -140,7 +149,7 @@ local function remove_hook(pos, player)
 end
 
 local function control_player(pos, pos1, pos2, player)
-	if player then
+	if player and PlayerList[player:get_player_name()] then
 		local meta = minetest.get_meta(pos)
 		local running = meta:get_int("running")
 		if running == 1 then
@@ -161,7 +170,9 @@ local function control_player(pos, pos1, pos2, player)
 				end
 				if correction == true then
 					local last_pos = minetest.string_to_pos(meta:get_string("last_known_pos"))
-					player:setpos(last_pos)	
+					if last_pos then
+						player:setpos(last_pos)	
+					end
 				else  -- store last known correct position
 					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
 				end
@@ -743,10 +754,12 @@ minetest.register_on_joinplayer(function(player)
 		player:set_attribute("tower_crane_store_fly", minetest.serialize(privs["fly"]))
 		player:set_attribute("tower_crane_store_speed", minetest.serialize(physics.speed))
 	end
+	maintain_playerlist()
 end)
 
 -- switch back to normal player privs
 minetest.register_on_leaveplayer(function(player, timed_out)
+	maintain_playerlist()
 	remove_hook(nil, player)
 end)
 
