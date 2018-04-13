@@ -43,15 +43,6 @@ local function chat(owner, text)
 	end
 end
 
-local PlayerList = {}
-
-local function maintain_playerlist()
-	PlayerList = {}
-	for _,player in ipairs(minetest.get_connected_players()) do
-		PlayerList[player:get_player_name()] = true
-	end
-end
-
 --##################################################################################################
 --##  Construction Area
 --##################################################################################################
@@ -148,8 +139,9 @@ local function remove_hook(pos, player)
 	end
 end
 
-local function control_player(pos, pos1, pos2, player)
-	if player and PlayerList[player:get_player_name()] then
+local function control_player(pos, pos1, pos2, player_name)
+	local player = minetest.get_player_by_name(player_name)
+	if player then
 		local meta = minetest.get_meta(pos)
 		local running = meta:get_int("running")
 		if running == 1 then
@@ -164,8 +156,8 @@ local function control_player(pos, pos1, pos2, player)
 				if pl_pos.z < pos1.z then pl_pos.z = pos1.z; correction = true end
 				if pl_pos.z > pos2.z then pl_pos.z = pos2.z; correction = true end
 				-- check if a protected area is violated
-				if correction == false and minetest.is_protected(pl_pos, player:get_player_name()) then
-					chat(player:get_player_name(), "Area is protected.")
+				if correction == false and minetest.is_protected(pl_pos, player_name) then
+					chat(player_name, "Area is protected.")
 					correction = true
 				end
 				if correction == true then
@@ -177,7 +169,7 @@ local function control_player(pos, pos1, pos2, player)
 					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
 				end
 				
-				minetest.after(1, control_player, pos, pos1, pos2, player)
+				minetest.after(1, control_player, pos, pos1, pos2, player_name)
 			else
 				remove_hook(pos, player)
 			end
@@ -205,7 +197,7 @@ local function place_hook(pos, dir, player, pos1, pos2)
 		player:setpos(pos)
 		meta:set_string("last_known_pos", minetest.pos_to_string(pos))
 		-- control player every second
-		minetest.after(1, control_player, switch_pos, pos1, pos2, player)
+		minetest.after(1, control_player, switch_pos, pos1, pos2, player:get_player_name())
 	end
 end	
 
@@ -754,12 +746,10 @@ minetest.register_on_joinplayer(function(player)
 		player:set_attribute("tower_crane_store_fly", minetest.serialize(privs["fly"]))
 		player:set_attribute("tower_crane_store_speed", minetest.serialize(physics.speed))
 	end
-	maintain_playerlist()
 end)
 
 -- switch back to normal player privs
 minetest.register_on_leaveplayer(function(player, timed_out)
-	maintain_playerlist()
 	remove_hook(nil, player)
 end)
 
