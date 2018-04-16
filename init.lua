@@ -163,7 +163,7 @@ local function control_player(pos, pos1, pos2, player_name)
 				if correction == true then
 					local last_pos = minetest.string_to_pos(meta:get_string("last_known_pos"))
 					if last_pos then
-						player:setpos(last_pos)	
+						player:set_pos(last_pos)	
 					end
 				else  -- store last known correct position
 					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
@@ -194,7 +194,7 @@ local function place_hook(pos, dir, player, pos1, pos2)
 		pos.y = pos.y - 1
 		pos.x = pos.x + dir.x
 		pos.z = pos.z + dir.z
-		player:setpos(pos)
+		player:set_pos(pos)
 		meta:set_string("last_known_pos", minetest.pos_to_string(pos))
 		-- control player every second
 		minetest.after(1, control_player, switch_pos, pos1, pos2, player:get_player_name())
