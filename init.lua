@@ -43,6 +43,9 @@ local function chat(owner, text)
 	end
 end
 
+-- To prevent race condition crashes
+local Currently_left_the_game = nil
+
 --##################################################################################################
 --##  Construction Area
 --##################################################################################################
@@ -140,6 +143,10 @@ local function remove_hook(pos, player)
 end
 
 local function control_player(pos, pos1, pos2, player_name)
+	if player_name == Currently_left_the_game then
+		Currently_left_the_game = nil
+		return
+	end
 	local player = minetest.get_player_by_name(player_name)
 	if player then
 		local meta = minetest.get_meta(pos)
@@ -168,7 +175,6 @@ local function control_player(pos, pos1, pos2, player_name)
 				else  -- store last known correct position
 					meta:set_string("last_known_pos", minetest.pos_to_string(pl_pos))
 				end
-				
 				minetest.after(1, control_player, pos, pos1, pos2, player_name)
 			else
 				remove_hook(pos, player)
@@ -751,6 +757,7 @@ end)
 -- switch back to normal player privs
 minetest.register_on_leaveplayer(function(player, timed_out)
 	remove_hook(nil, player)
+	Currently_left_the_game = player:get_player_name()
 end)
 
 
