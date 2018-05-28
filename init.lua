@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	v0.17 by JoSt
+	v1.0 by JoSt
 
 	Copyright (C) 2017-2018 Joachim Stolberg
 	LGPLv2.1+
@@ -27,6 +27,7 @@
 	2017-11-07  v0.15  Working zone is now restricted to areas with necessary rights
 	2018-02-27  v0.16  "fly privs" bug fixed (issue #2)
 	2018-04-12  v0.17  "area owner changed" bug fixed (issue #3)
+  2018-05-28  v1.0   Mod released
 
 ]]--
 
