@@ -24,6 +24,7 @@ The size of the crane (which is the construction area) and the rope length can b
 
 * To remove the crane, destroy the base block.  
 
+**Minetest v5.0+ is required!**
 
 ## Dependencies
 default  
