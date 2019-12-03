@@ -217,6 +217,10 @@ local function control_player(pos, pos1, pos2, player_name)
 				end
 				minetest.after(1, control_player, pos, pos1, pos2, player_name)
 			end
+		else
+			store_last_used(pos)
+			place_player(pos, player)
+			reset_operator_privs(player)
 		end
 	else
 		local meta = minetest.get_meta(pos)

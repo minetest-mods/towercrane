@@ -56,3 +56,5 @@ Textures: CC0
 * 2018-04-12  v0.17  "area owner changed" bug fixed (issue #3)
 * 2018-05-28  v1.0 Mod released
 * 2019-09-08  v2.0 Completely restructured, protection areas removed
+* 2019-12-03  v2.1 Bugfix issue #2 (Some players still have "fly" after detaching)
+
