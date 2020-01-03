@@ -3,7 +3,7 @@
 	Tower Crane Mod
 	===============
 
-	Copyright (C) 2017-2019 Joachim Stolberg
+	Copyright (C) 2017-2020 Joachim Stolberg
 	LGPLv2.1+
 	See LICENSE.txt for more information
 
@@ -306,6 +306,16 @@ end)
 minetest.register_on_leaveplayer(function(player)
 	if is_operator(player) then
 		Currently_left_the_game[player:get_player_name()] = true
+	end
+end)
+
+minetest.register_on_dieplayer(function(player, reason)
+	if is_operator(player) then
+		local pos = get_my_crane_pos(player)
+		if pos then
+			reset_operator_privs(player)
+			stop_crane(pos, player)
+		end
 	end
 end)
 

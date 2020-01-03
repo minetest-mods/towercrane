@@ -20,7 +20,7 @@ The size of the crane (which is the construction area) and the rope length can b
   If there is not enough free space for the crane mast/arm or the potential construction area of the 
   crane intersects a protected area from another player, the crane will not be build.
 
-* Right-click the crane switch block to switch to fly privs. The player will be placed in front of the crane.
+* Right-click the crane switch block to start the crane (get fly privs). The player will be placed in front of the crane.
 
 * To remove the crane, destroy the base block.  
 
@@ -31,7 +31,7 @@ default
 
 
 # License
-Copyright (C) 2017-2019 Joachim Stolberg  
+Copyright (C) 2017-2020 Joachim Stolberg  
 Code: Licensed under the GNU LGPL version 2.1 or later. See LICENSE.txt and http://www.gnu.org/licenses/lgpl-2.1.txt  
 Textures: CC0
 
@@ -57,4 +57,4 @@ Textures: CC0
 * 2018-05-28  v1.0 Mod released
 * 2019-09-08  v2.0 Completely restructured, protection areas removed
 * 2019-12-03  v2.1 Bugfix issue #2 (Some players still have "fly" after detaching)
-
+* 2020-01-03  V2.2 dying player bugfix (when fly mode is disabled)

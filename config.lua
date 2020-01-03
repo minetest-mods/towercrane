@@ -1,3 +1,15 @@
+--[[
+
+	Tower Crane Mod
+	===============
+
+	Copyright (C) 2017-2020 Joachim Stolberg
+	LGPLv2.1+
+	See LICENSE.txt for more information
+
+]]--
+
+
 -- Maximum crane height in blocks (8..n)
 towercrane.max_height = tonumber(minetest.setting_get("towercrane_max_height")) or 32
 
