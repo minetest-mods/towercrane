@@ -232,12 +232,12 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 	description = S("Tower Crane Mast Ctrl On"),
 	drawtype = "node",
 	tiles = {
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl_on.png",
-		"towercrane_mast_ctrl_on.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png^towercrane_button_on.png",
+		"towercrane_base.png^towercrane_button_on.png",
 	},
 	-- switch the crane OFF
 	on_rightclick = function (pos, node, clicker)
@@ -255,6 +255,7 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 
 	paramtype = "light",
 	paramtype2 = "facedir",
+	light_source = 3,
 	sunlight_propagates = true,
 	is_ground_content = false,
 	groups = {crumbly=0, not_in_creative_inventory=1},
@@ -264,12 +265,12 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 	description = S("Tower Crane Mast Ctrl Off"),
 	drawtype = "node",
 	tiles = {
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl.png",
-		"towercrane_mast_ctrl_off.png",
-		"towercrane_mast_ctrl_off.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png",
+		"towercrane_base.png^towercrane_button_off.png",
+		"towercrane_base.png^towercrane_button_off.png",
 	},
 	-- switch the crane ON
 	on_rightclick = function (pos, node, clicker)
