@@ -240,14 +240,14 @@ end
 -------------------------------------------------------------------------------
 minetest.register_node("towercrane:base", {
 	description = S("Tower Crane Base"),
-	inventory_image = "towercrane_invent.png",
+	inventory_image = "[inventorycube{towercrane_mast.png{towercrane_mast.png{towercrane_mast.png",
 	tiles = {
-		"towercrane_base_top.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
+		"towercrane_base.png^towercrane_arrow.png",
+		"towercrane_base.png^towercrane_screws.png",
+		"towercrane_base.png^towercrane_screws.png",
+		"towercrane_base.png^towercrane_screws.png",
+		"towercrane_base.png^towercrane_screws.png",
+		"towercrane_base.png^towercrane_screws.png",
 	},
 	paramtype = "light",
 	paramtype2 = "facedir",
@@ -309,12 +309,7 @@ minetest.register_node("towercrane:base", {
 minetest.register_node("towercrane:balance", {
 	description = S("Tower Crane Balance"),
 	tiles = {
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
-		"towercrane_base.png",
+		"towercrane_base.png^towercrane_screws.png",
 	},
 	paramtype = "light",
 	paramtype2 = "facedir",
@@ -328,11 +323,10 @@ minetest.register_node("towercrane:mast", {
 	drawtype = "glasslike_framed",
 	tiles = {
 		"towercrane_mast.png",
-		"towercrane_mast.png",
-		"towercrane_mast.png",
-		"towercrane_mast.png",
-		"towercrane_mast.png",
-		"towercrane_mast.png",
+		{
+			name = "towercrane_mast.png",
+			backface_culling = false,
+		},
 	},
 	paramtype = "light",
 	paramtype2 = "facedir",
@@ -346,11 +340,10 @@ minetest.register_node("towercrane:arm", {
 	drawtype = "glasslike_framed",
 	tiles = {
 		"towercrane_arm.png",
-		"towercrane_arm.png",
-		"towercrane_arm.png",
-		"towercrane_arm.png",
-		"towercrane_arm.png",
-		"towercrane_arm.png",
+		{
+			name = "towercrane_arm.png",
+			backface_culling = false,
+		},
 	},
 	paramtype = "light",
 	paramtype2 = "facedir",
@@ -364,11 +357,10 @@ minetest.register_node("towercrane:arm2", {
 	drawtype = "glasslike_framed",
 	tiles = {
 		"towercrane_arm2.png",
-		"towercrane_arm2.png",
-		"towercrane_arm2.png",
-		"towercrane_arm2.png",
-		"towercrane_arm2.png",
-		"towercrane_arm2.png",
+		{
+			name = "towercrane_arm2.png",
+			backface_culling = false,
+		},
 	},
 	paramtype = "light",
 	paramtype2 = "facedir",
