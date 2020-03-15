@@ -33,7 +33,7 @@ default
 # License
 Copyright (C) 2017-2020 Joachim Stolberg  
 Code: Licensed under the GNU LGPL version 2.1 or later. See LICENSE.txt and http://www.gnu.org/licenses/lgpl-2.1.txt  
-Textures: CC0
+Textures: CC0 (by Ammoth)
 
 
 # History:
@@ -58,3 +58,4 @@ Textures: CC0
 * 2019-09-08  v2.0 Completely restructured, protection areas removed
 * 2019-12-03  v2.1 Bugfix issue #2 (Some players still have "fly" after detaching)
 * 2020-01-03  V2.2 dying player bugfix (when fly mode is disabled)
+* 2020-03-16  V2.3 switched to 16 bit textures (by tuedel/Ammoth) and crane upright time increased to 5 real days
