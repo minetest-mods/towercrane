@@ -9,7 +9,7 @@
 
 ]]--
 
-local DAYS_WITHOUT_USE = 1
+local DAYS_WITHOUT_USE = 72 * 5
 
 -- for lazy programmers
 local P2S = function(pos) if pos then return minetest.pos_to_string(pos) end end
