@@ -244,7 +244,6 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 		local pos2 = get_my_crane_pos(clicker)
 		if pos2 and vector.equals(pos, pos2) or minetest.check_player_privs(clicker, "server") then
 			stop_crane(pos, clicker)
-			reset_operator_privs(clicker)
 		end
 	end,
 
