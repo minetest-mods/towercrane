@@ -103,7 +103,7 @@ end
 local function reset_operator_privs(player)
 	local privs = minetest.get_player_privs(player:get_player_name())
 	local meta = player:get_meta()
-	if meta and privs then
+	if meta and privs and meta:get_int("towercrane_isoperator") ~= 0 then
 		meta:set_string("towercrane_pos", "")
 		-- restore the player privs default values
 		meta:set_int("towercrane_isoperator", 0)
