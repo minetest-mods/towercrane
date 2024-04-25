@@ -323,12 +323,12 @@ minetest.register_node("towercrane:mast_ctrl_off", {
 })
 
 minetest.register_on_joinplayer(function(player)
-	-- To recover from a crash, this must be done unconditionally
-	reset_operator_privs(player)
 	local pos = get_my_crane_pos(player)
 	if pos then
 		stop_crane(pos, player)
 	end
+	-- To recover from a crash, this must be done unconditionally
+	reset_operator_privs(player)
 end)
 
 minetest.register_on_leaveplayer(function(player)
