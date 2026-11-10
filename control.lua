@@ -248,7 +248,7 @@ end
 
 minetest.register_node("towercrane:mast_ctrl_on", {
 	description = S("Tower Crane Mast Ctrl On"),
-	drawtype = "node",
+	drawtype = "normal",
 	tiles = {
 		"towercrane_base.png",
 		"towercrane_base.png",
@@ -281,7 +281,7 @@ minetest.register_node("towercrane:mast_ctrl_on", {
 
 minetest.register_node("towercrane:mast_ctrl_off", {
 	description = S("Tower Crane Mast Ctrl Off"),
-	drawtype = "node",
+	drawtype = "normal",
 	tiles = {
 		"towercrane_base.png",
 		"towercrane_base.png",
